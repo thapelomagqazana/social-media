@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { logoutUser } from "../services/userService";
 import { useNavigate } from "react-router-dom";
@@ -27,9 +27,9 @@ interface DecodedToken {
   id: string;
 }
 
-// AuthProvider Component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   /**
    * Function to check if the token is expired
@@ -37,29 +37,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isTokenExpired = (token: string) => {
     try {
       const decoded: DecodedToken = jwtDecode(token);
-      return decoded.exp * 1000 < Date.now(); // Convert exp to milliseconds
+      return decoded.exp * 1000 < Date.now(); // Convert expiration to milliseconds
     } catch (error) {
-      return true; // Assume expired if decoding fails
+      return true; // If decoding fails, assume expired
     }
   };
 
-
   /**
-   * Retrieve credentials on app load
+   * Check user authentication state on app load
    */
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
 
-    if (!token || !userId || isTokenExpired(token)) {
-      logout(); // Expired or missing token → log out
-      return;
+    if (!token || isTokenExpired(token)) {
+      logout();
     }
+
+    setTimeout(() => {
+      setIsCheckingAuth(false); // Wait for splash screen before rendering routes
+    }, 4000);
   }, []);
 
-
   /**
-   * Save credentials on successful login
+   * Save user credentials on successful login
    */
   const authUser = (data: any) => {
     localStorage.setItem("token", data.token);
@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Delete credentials on logout
+   * Logout function
    */
   const logout = () => {
     logoutUser();
@@ -76,8 +76,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigate("/signin");
   };
 
-  return <AuthContext.Provider value={{ authUser, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ authUser, logout }}>
+      {!isCheckingAuth && children}
+    </AuthContext.Provider>
+  );
 };
 
-// Export AuthContext & useAuth properly
 export { AuthContext };
