@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema(
       required: [true, "Name is required"],
       trim: true,
       maxlength: [255, "Name must be at most 255 characters long"],
+      index: "text", // Index for faster text searches
     },
     email: {
       type: String,
@@ -25,7 +26,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true,
+      index: true, // Indexed for quick lookup
       match: [
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         "Please enter a valid email address",

@@ -9,21 +9,55 @@ import mongoose from "mongoose";
 
 /**
  * @function getUsers
- * @description Retrieves all users from the database.
+ * @description Retrieves paginated users with optional search filters.
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
  * @returns {Object} JSON response containing a list of users (excluding passwords).
  */
 export const getUsers = async (req, res) => {
   try {
+    const { search, page = 1, limit = 10, role } = req.query;
+
+    // Convert page & limit to integers
+    const pageNumber = parseInt(page, 10) || 1;
+    const limitNumber = parseInt(limit, 10) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
     let query = {};
-    if (req.query.role) {
-      query.role = req.query.role; // Apply role filter
+
+    // Search by name or email (case insensitive)
+    if (search) {
+      const searchTerm = search.trim();
+
+      query.$or = [
+        { name: { $regex: `^${searchTerm}$`, $options: "i" } }, // Exact name match
+        { email: { $regex: searchTerm, $options: "i" } } // Case-insensitive email search
+      ];
     }
-    // Fetch all users, excluding passwords for security
-    const users = await User.find(query).select("-password");
-    res.json({users: users});
+
+    // Filter by role if provided
+    if (role) {
+      query.role = role;
+    }
+
+    // Get paginated results
+    const users = await User.find(query)
+      .select("-password") // Exclude passwords
+      .sort({ createdAt: -1 }) // Show latest users first
+      .skip(skip)
+      .limit(limitNumber);
+
+    // Count total users (for pagination metadata)
+    const totalUsers = await User.countDocuments(query);
+
+    res.json({
+      users,
+      totalUsers,
+      currentPage: pageNumber,
+      totalPages: Math.ceil(totalUsers / limitNumber),
+    });
   } catch (error) {
+    console.error("Error fetching users:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

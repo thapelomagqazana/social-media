@@ -39,19 +39,33 @@ export const protect = async (req, res, next) => {
 
     next(); // Continue to the next middleware/controller
   } catch (error) {
-    // console.error("❌ Authentication Error:", error.message);
     res.status(401).json({ message: "Invalid token, authentication failed" });
   }
 };
 
+/**
+ * @function validateQueryParams
+ * @description Validates query parameters to prevent invalid input.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {Function} next - Express next function.
+ */
 export const validateQueryParams = (req, res, next) => {
-    if (req.query.page && isNaN(req.query.page) || Number(req.query.page) < 1) {
-      return res.status(400).json({ message: "Invalid page number" });
-    }
-    if (req.query.search && /[<>;]/.test(req.query.search)) {
+  if (req.query.page && (isNaN(req.query.page) || Number(req.query.page) < 1)) {
+    return res.status(400).json({ message: "Invalid page number" });
+  }
+  if (req.query.limit && (isNaN(req.query.limit) || Number(req.query.limit) < 1)) {
+    return res.status(400).json({ message: "Invalid limit number" });
+  }
+  if (req.query.search) {
+    req.query.search = decodeURIComponent(req.query.search).trim(); // Decode & trim search query
+    
+    if (/^[a-zA-Z0-9\s@._-]+$/.test(req.query.search) === false) { 
       return res.status(400).json({ message: "Invalid input" });
     }
-    next();
+  }
+
+  next();
 };
   
   
