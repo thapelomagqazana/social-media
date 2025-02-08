@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Glassmorphism Container */
+.auth-container {
+  @apply bg-opacity-90 backdrop-blur-lg shadow-lg;
+  background: rgba(18, 18, 18, 0.7);
+  border-radius: 15px;
+  padding: 2.5rem;
+  text-align: center;
+  margin-top: 40px;
+}
+
+/* OAuth Buttons Container */
+.oauth-container {
+    @apply flex justify-center gap-4 mt-6;
+    margin-bottom: 10px;
+}
+
+.oauth-container button {
+    margin: auto 10px;
+}
+
+/* Standard Button Styling */
+.oauth-container button,
+.submit-button {
+    @apply w-full py-2 rounded-lg text-white transition-transform duration-200 ease-in-out;
+}
+
+/* Hover Effect */
+.oauth-container button:hover,
+.submit-button:hover {
+    transform: scale(1.05);
+}
+
+.oauth-container button:hover {
+  transform: scale(1.05);
+}
+
+/* Form Fields */
+input {
+  @apply bg-transparent border border-gray-500 text-white focus:ring focus:ring-blue-500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 2rem;
+  }
+
+  .avatar-container {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .oauth-container {
+    @apply flex flex-col gap-3; /* Stack buttons vertically with spacing */
+  }
+
+ .oauth-container button {
+    @apply w-full;
+    margin-bottom: 10px;
+ }
+}
+
+/* Button Effects */
+button {
+  @apply bg-blue-600 text-white py-2 px-4 rounded-md transition duration-300 ease-in-out;
+}
+
+button:hover {
+  background: linear-gradient(45deg, #00ff7f, #bb86fc);
+  box-shadow: 0px 0px 10px rgba(0, 255, 127, 0.6);
+}
+
+/* Sign-Up Redirect Styling */
+.sign-up-redirect {
+    @apply mt-6 text-center text-gray-400 text-sm;
+}
+
+.sign-up-redirect a {
+    @apply text-blue-500 font-semibold transition-colors duration-200 ease-in-out;
+}
+
+/* Hover Effect */
+.sign-up-redirect a:hover {
+    @apply text-blue-300 underline;
+}
+
+

@@ -18,15 +18,15 @@ import {
   Checkbox,
   FormControlLabel,
 } from "@mui/material";
-import { Visibility, VisibilityOff, Google, Facebook } from "@mui/icons-material";
+import { Visibility, VisibilityOff, Google, Facebook, Person } from "@mui/icons-material";
+import "../styles/Auth.css";
 
 /**
- * Sign-In Page Component
- *
- * - Allows users to log in with email/password or OAuth.
- * - Implements form validation using React Hook Form and Yup.
- * - Integrates with backend authentication API.
- * - Features a sleek Glassmorphism UI.
+ * **Sign-In Page Component**
+ * - Allows users to log in with **email/password** or **OAuth**.
+ * - Implements form validation using **React Hook Form** and **Yup**.
+ * - Integrates with **backend authentication API**.
+ * - Features a sleek **Glassmorphism UI** with **responsive design**.
  */
 
 // Form Validation Schema
@@ -42,10 +42,10 @@ interface SignInFormInputs {
 }
 
 /**
- * Sign-In Component
- * - Provides a login form for users.
- * - Implements validation, error handling, and success feedback.
- * - Supports OAuth login (Google & Facebook).
+ * **Sign-In Component**
+ * - Provides a **login form** for users.
+ * - Implements **validation, error handling, and success feedback**.
+ * - Supports **OAuth login (Google & Facebook)**.
  */
 const SignInPage: React.FC = () => {
   // Initialize form handling with validation
@@ -74,26 +74,25 @@ const SignInPage: React.FC = () => {
    * - Sends login data to the backend.
    * - Displays success/error messages via a Snackbar.
    * - Redirects users to the dashboard upon successful login.
-   * @param {SignInFormInputs} data - Form input data.
    */
   const onSubmit = async (data: SignInFormInputs) => {
     setLoading(true);
     try {
       const response = await loginUser(data);
-      authUser(response); // Store user data in AuthContext
-
-      // Store credentials if "Remember Me" is checked
-      if (rememberMe) {
-        localStorage.setItem("savedUser", JSON.stringify(data));
-      }
-
+      authUser(response);
+       // Store token and user data in Auth Context
       setSnackbar({ open: true, message: "Login successful", severity: "success" });
 
-      // Reset form and navigate to dashboard
+      // Reset form and redirect after success
       reset();
       setTimeout(() => navigate("/dashboard"), 2000);
-    } catch {
-      setSnackbar({ open: true, message: "Login failed. Try again.", severity: "error" });
+    } catch (error: unknown) {
+      if (error instanceof Error && "response" in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };  // Proper type assertion
+        setSnackbar({ open: true, message: axiosError.response?.data?.message || "Signup failed", severity: "error" });
+      } else {
+        setSnackbar({ open: true, message: "An unexpected error occurred", severity: "error" });
+      }
     } finally {
       setLoading(false);
     }
@@ -102,7 +101,12 @@ const SignInPage: React.FC = () => {
   return (
     <Container maxWidth="sm">
       {/* Glassmorphism UI Container */}
-      <Paper className="glassmorphism p-8 mt-10">
+      <Paper className="auth-container">
+        {/* Avatar Placeholder */}
+        <div className="avatar-container">
+          <Person fontSize="large" />
+        </div>
+
         <Typography variant="h4" align="center" gutterBottom>
           Sign In
         </Typography>
@@ -114,7 +118,16 @@ const SignInPage: React.FC = () => {
             name="email"
             control={control}
             render={({ field }) => (
-              <TextField {...field} label="Email" type="email" fullWidth margin="normal" autoFocus error={!!errors.email} helperText={errors.email?.message} />
+              <TextField
+                {...field}
+                label="Email"
+                type="email"
+                fullWidth
+                margin="normal"
+                autoFocus
+                error={!!errors.email}
+                helperText={errors.email?.message}
+              />
             )}
           />
 
@@ -154,7 +167,7 @@ const SignInPage: React.FC = () => {
           </Typography>
 
           {/* OAuth Login Options */}
-          <div className="flex justify-center gap-4 my-4">
+          <div className="oauth-container">
             <Button variant="contained" color="error" startIcon={<Google />}>
               Google
             </Button>
@@ -164,14 +177,16 @@ const SignInPage: React.FC = () => {
           </div>
 
           {/* Submit Button */}
-          <Button type="submit" variant="contained" color="primary" fullWidth className="mt-4" disabled={loading}>
+          <Button type="submit" variant="contained" color="primary" fullWidth className="submit-button mt-4" disabled={loading}>
             {loading ? <CircularProgress size={24} /> : "Sign In"}
           </Button>
 
+
           {/* Redirect to Sign-Up */}
-          <Typography variant="body2" align="center" className="mt-4">
+          <Typography variant="body2" className="sign-up-redirect">
             Don't have an account? <Link to="/signup">Sign up</Link>
           </Typography>
+
         </form>
       </Paper>
 
