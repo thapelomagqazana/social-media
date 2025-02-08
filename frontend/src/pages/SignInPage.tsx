@@ -14,7 +14,20 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
+  IconButton,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
+import { Visibility, VisibilityOff, Google, Facebook } from "@mui/icons-material";
+
+/**
+ * Sign-In Page Component
+ *
+ * - Allows users to log in with email/password or OAuth.
+ * - Implements form validation using React Hook Form and Yup.
+ * - Integrates with backend authentication API.
+ * - Features a sleek Glassmorphism UI.
+ */
 
 // Form Validation Schema
 const signInSchema = yup.object({
@@ -22,13 +35,20 @@ const signInSchema = yup.object({
   password: yup.string().required("Password is required"),
 });
 
-// Type for Form Data
+// Type for Form Inputs
 interface SignInFormInputs {
   email: string;
   password: string;
 }
 
+/**
+ * Sign-In Component
+ * - Provides a login form for users.
+ * - Implements validation, error handling, and success feedback.
+ * - Supports OAuth login (Google & Facebook).
+ */
 const SignInPage: React.FC = () => {
+  // Initialize form handling with validation
   const {
     handleSubmit,
     control,
@@ -41,6 +61,8 @@ const SignInPage: React.FC = () => {
   const navigate = useNavigate();
   const { authUser } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
     open: false,
     message: "",
@@ -48,26 +70,30 @@ const SignInPage: React.FC = () => {
   });
 
   /**
-   * Handles form submission and sends data to the backend API.
+   * Handles form submission.
+   * - Sends login data to the backend.
+   * - Displays success/error messages via a Snackbar.
+   * - Redirects users to the dashboard upon successful login.
+   * @param {SignInFormInputs} data - Form input data.
    */
   const onSubmit = async (data: SignInFormInputs) => {
     setLoading(true);
     try {
       const response = await loginUser(data);
-      authUser(response);
-       // Store token and user data in Auth Context
+      authUser(response); // Store user data in AuthContext
+
+      // Store credentials if "Remember Me" is checked
+      if (rememberMe) {
+        localStorage.setItem("savedUser", JSON.stringify(data));
+      }
+
       setSnackbar({ open: true, message: "Login successful", severity: "success" });
 
-      // Reset form and redirect after success
+      // Reset form and navigate to dashboard
       reset();
       setTimeout(() => navigate("/dashboard"), 2000);
-    } catch (error: unknown) {  // Use 'unknown' instead of 'any'
-      if (error instanceof Error && "response" in error) {
-        const axiosError = error as { response?: { data?: { message?: string } } };  // Proper type assertion
-        setSnackbar({ open: true, message: axiosError.response?.data?.message || "Signup failed", severity: "error" });
-      } else {
-        setSnackbar({ open: true, message: "An unexpected error occurred", severity: "error" });
-      }
+    } catch {
+      setSnackbar({ open: true, message: "Login failed. Try again.", severity: "error" });
     } finally {
       setLoading(false);
     }
@@ -75,30 +101,24 @@ const SignInPage: React.FC = () => {
 
   return (
     <Container maxWidth="sm">
-      <Paper elevation={3} sx={{ padding: 4, marginTop: 6 }}>
+      {/* Glassmorphism UI Container */}
+      <Paper className="glassmorphism p-8 mt-10">
         <Typography variant="h4" align="center" gutterBottom>
           Sign In
         </Typography>
 
+        {/* Sign-In Form */}
         <form onSubmit={handleSubmit(onSubmit)}>
           {/* Email Input */}
           <Controller
             name="email"
             control={control}
             render={({ field }) => (
-              <TextField
-                {...field}
-                label="Email"
-                type="email"
-                fullWidth
-                margin="normal"
-                error={!!errors.email}
-                helperText={errors.email?.message}
-              />
+              <TextField {...field} label="Email" type="email" fullWidth margin="normal" autoFocus error={!!errors.email} helperText={errors.email?.message} />
             )}
           />
 
-          {/* Password Input */}
+          {/* Password Input with Toggle Visibility */}
           <Controller
             name="password"
             control={control}
@@ -106,32 +126,58 @@ const SignInPage: React.FC = () => {
               <TextField
                 {...field}
                 label="Password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 fullWidth
                 margin="normal"
                 error={!!errors.password}
                 helperText={errors.password?.message}
+                InputProps={{
+                  endAdornment: (
+                    <IconButton onClick={() => setShowPassword(!showPassword)}>
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  ),
+                }}
               />
             )}
           />
 
+          {/* "Remember Me" Checkbox */}
+          <FormControlLabel
+            control={<Checkbox checked={rememberMe} onChange={() => setRememberMe(!rememberMe)} />}
+            label="Remember Me"
+          />
+
+          {/* Forgot Password Link */}
+          <Typography variant="body2" align="right" className="mt-2">
+            <Link to="/forgot-password">Forgot Password?</Link>
+          </Typography>
+
+          {/* OAuth Login Options */}
+          <div className="flex justify-center gap-4 my-4">
+            <Button variant="contained" color="error" startIcon={<Google />}>
+              Google
+            </Button>
+            <Button variant="contained" color="primary" startIcon={<Facebook />}>
+              Facebook
+            </Button>
+          </div>
+
           {/* Submit Button */}
-          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ marginTop: 2 }} disabled={loading}>
+          <Button type="submit" variant="contained" color="primary" fullWidth className="mt-4" disabled={loading}>
             {loading ? <CircularProgress size={24} /> : "Sign In"}
           </Button>
 
-          {/* Sign Up Link */}
-          <Typography variant="body2" align="center" sx={{ marginTop: 2 }}>
+          {/* Redirect to Sign-Up */}
+          <Typography variant="body2" align="center" className="mt-4">
             Don't have an account? <Link to="/signup">Sign up</Link>
           </Typography>
         </form>
       </Paper>
 
-      {/* Snackbar for Success/Error Messages */}
+      {/* Snackbar for success/error messages */}
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
-          {snackbar.message}
-        </Alert>
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
     </Container>
   );

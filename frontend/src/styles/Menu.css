@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Glassmorphism Navbar */
+.glass-navbar {
+  @apply bg-opacity-90 backdrop-blur-lg shadow-lg;
+  background: rgba(18, 18, 18, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Toolbar Layout */
+.toolbar {
+  @apply flex justify-between items-center px-6 py-3;
+}
+
+/* Brand Title */
+.brand-title {
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  text-transform: uppercase;
+  background: linear-gradient(45deg, #00ff7f, #bb86fc);
+  -webkit-background-clip: text;
+  color: transparent;
+  transition: transform 0.3s ease-in-out;
+}
+
+.brand-title:hover {
+  transform: scale(1.1);
+}
+
+/* Hamburger Menu (Visible on All Screens) */
+.hamburger-menu {
+  display: block;
+}
+
+/* Mobile Drawer */
+.mobile-menu .drawer-header {
+  @apply flex justify-end p-4;
+}
+
+/* Profile Avatar */
+.profile-avatar {
+  @apply cursor-pointer w-10 h-10;
+  transition: transform 0.3s ease-in-out;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.1);
+}

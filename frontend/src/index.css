@@ -12,15 +12,12 @@
   box-sizing: border-box;
 }
 
-/* 🎨 Glitch Animation for Futuristic Branding */
-@keyframes glitch {
-  0% { text-shadow: 2px 2px 2px #ff00ff; }
-  50% { text-shadow: -2px -2px 2px #00ffff; }
-  100% { text-shadow: 2px 2px 2px #ff00ff; }
-}
-
-.glitch-effect {
-  animation: glitch 1.5s infinite alternate;
+/* Glassmorphism UI */
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
 

@@ -8,10 +8,12 @@ import ViewProfilePage from "./pages/ViewProfilePage";
 import EditProfilePage from "./pages/EditProfilePage";
 import DashboardPage from "./pages/DashboardPage";
 import PrivateRoute from "./components/PrivateRoute";
+import Menu from "./components/Menu";
 
 /**
  * Main application component.
- * - Shows SplashScreen for a few seconds before checking authentication.
+ * - Displays a splash screen before showing authentication routes.
+ * - Manages protected and public routes.
  */
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -27,19 +29,23 @@ const App: React.FC = () => {
       {showSplash ? (
         <SplashScreen />
       ) : (
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/signin" element={<SignInPage />} />
+        /** Wrapping elements inside a parent `<>` fragment */
+        <>
+          <Menu />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/signin" element={<SignInPage />} />
 
-          {/* Private Routes */}
-          <Route element={<PrivateRoute />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/users" element={<UsersListPage />} />
-            <Route path="/profile/:userId" element={<ViewProfilePage />} />
-            <Route path="/profile/edit/:userId" element={<EditProfilePage />} />
-          </Route>
-        </Routes>
+            {/* Private Routes */}
+            <Route element={<PrivateRoute />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/users" element={<UsersListPage />} />
+              <Route path="/profile/:userId" element={<ViewProfilePage />} />
+              <Route path="/profile/edit/:userId" element={<EditProfilePage />} />
+            </Route>
+          </Routes>
+        </>
       )}
     </>
   );
