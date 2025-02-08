@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      index: true,
       match: [
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         "Please enter a valid email address",
@@ -35,6 +36,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
       minlength: [8, "Password must be at least 8 characters long"],
+      select: false, // Exclude from queries by default
       validate: {
         validator: function (value) {
           // Regex for a strong password: at least one uppercase, one lowercase, one digit, and one special character
@@ -51,6 +53,12 @@ const userSchema = new mongoose.Schema(
         enum: ["admin", "user"],
         default: "user",
     },
+    avatar: { 
+      type: String, 
+      default: "" 
+    },
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],  // List of followers
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],  // List of users being followed
     createdAt: {
         type: Date,
         default: Date.now,

@@ -10,6 +10,7 @@ import {
   getUserById,
   updateUser,
   deleteUser,
+  getUserFollowers
 } from "../controllers/userController.js";
 import { protect, validateQueryParams } from "../middleware/authMiddleware.js";
 
@@ -42,5 +43,12 @@ router.put("/:userId", protect, updateUser);
  * @access Protected (Requires authentication & authorization)
  */
 router.delete("/:userId", protect, deleteUser);
+
+/**
+ * @route   GET /api/users/:userId/followers
+ * @desc    Get all followers of a user
+ * @access  Private (Only authenticated users can view followers)
+ */
+router.get("/:userId/followers", protect, getUserFollowers);
 
 export default router;

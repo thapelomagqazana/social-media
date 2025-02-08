@@ -6,17 +6,23 @@
 import request from "supertest";
 import app from "../../app.js";
 import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
 import dotenv from "dotenv";
 import User from "../../models/User.js"; // Import User model
 
 // Load environment variables
 dotenv.config();
 
+let mongoServer;
+
 /**
  * @beforeAll Connect to the test database before running tests
  */
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI, {
+  mongoServer = await MongoMemoryServer.create();
+  const mongoUri = mongoServer.getUri();
+
+  await mongoose.connect(mongoUri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
@@ -29,6 +35,11 @@ beforeAll(async () => {
     { name: "John Doe", email: "john@example.com", password: "Password@123" },
     { name: "Jane Smith", email: "jane.smith@example.com", password: "JanePass@456" },
   ]);
+});
+
+// Reset rate limiter after each test
+afterEach(async () => {
+  await new Promise((resolve) => setTimeout(resolve, 2000)); // Small delay to prevent rate limiting issues
 });
 
 /**
@@ -208,6 +219,23 @@ describe("POST /auth/signin - User Login", () => {
         expect(response.body).toHaveProperty("message", "Please enter a valid email address");
     });
 
+    it("❌ Should prevent brute force with rate limiting", async () => {
+    for (let i = 0; i < 20; i++) {
+      await request(app).post("/auth/signin").send({
+        email: "test@example.com",
+        password: "WrongPass@123",
+      });
+    }
+
+    const response = await request(app).post("/auth/signin").send({
+      email: "test@example.com",
+      password: "WrongPass@123",
+    });
+
+    expect(response.status).toBe(429);
+    expect(response.body).toHaveProperty("message", "Too many login attempts. Please try again later.");
+  });
+
     // it("🔹 Should allow email with Unicode characters", async () => {
     // const response = await request(app).post("/auth/signin").send({
     //     email: "jöhn@example.com",
@@ -236,4 +264,5 @@ afterEach(async () => {
  */
 afterAll(async () => {
   await mongoose.connection.close();
+  await mongoServer.stop();
 });

@@ -24,7 +24,6 @@ export const getUsers = async (req, res) => {
     const users = await User.find(query).select("-password");
     res.json({users: users});
   } catch (error) {
-    // console.error("❌ Error fetching users:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -65,7 +64,6 @@ export const getUserById = async (req, res) => {
 
     res.json({ user });
   } catch (error) {
-    // console.error("❌ Error fetching user:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -114,8 +112,6 @@ export const updateUser = async (req, res) => {
 
     res.json({ message: "User updated successfully", user: updatedUser });
   } catch (error) {
-    // console.error("❌ Error updating user:", error.message);
-    
     // Catch Mongoose validation errors
     if (error.name === "ValidationError") {
       return res.status(400).json({ message: error.message });
@@ -164,7 +160,41 @@ export const deleteUser = async (req, res) => {
       return res.status(200).json({ message: "User deleted successfully" });
     }
   } catch (error) {
-    console.error("❌ Error deleting user:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+/**
+ * Get User Followers
+ * - Retrieves all followers of a specific user.
+ * - Uses **Mongoose aggregation** for optimized data retrieval.
+ * - Returns follower details such as **ID, name, and avatar**.
+ * 
+ * @route   GET /api/users/:userId/followers
+ * @access  Private
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ */
+export const getUserFollowers = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate user existence
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Fetch followers with populated user details (name & avatar)
+    const followers = await User.find({ following: userId }).select("name avatar");
+
+    return res.status(200).json({
+      success: true,
+      count: followers.length,
+      followers,
+    });
+  } catch (error) {
+    console.error("Error fetching followers:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };

@@ -50,8 +50,6 @@ export const registerUser = async (req, res) => {
   
       res.status(201).json({ message: "User registered successfully", userId: user._id });
     } catch (error) {
-      // console.error("❌ Registration Error:", error);
-  
       if (error.name === "ValidationError") {
         return res.status(400).json({ message: Object.values(error.errors).map(err => err.message).join(", ") });
       }
@@ -101,7 +99,8 @@ export const loginUser = async (req, res) => {
         return res.status(400).json({ message: errors.join(", ") });
       }
   
-      const user = await User.findOne({ email: email.trim() });
+      // Optimize lookup with indexed email field
+      const user = await User.findOne({ email: email.trim() }).select("+password"); // Include password field
       if (!user || !(await user.matchPassword(password))) {
         return res.status(401).json({ message: "Invalid credentials" });
       }

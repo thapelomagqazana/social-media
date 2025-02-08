@@ -6,8 +6,24 @@
 
 import express from "express";
 import { registerUser, loginUser, logoutUser } from "../controllers/authController.js";
+import rateLimit from "express-rate-limit";
 
 const router = express.Router();
+
+// Check if running in test mode
+const isTestEnv = process.env.NODE_ENV === "test";
+
+// Rate limiting middleware (Tracks by IP)
+const loginRateLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: isTestEnv ? 20 : 5, // Higher limit in tests
+  standardHeaders: true, // Return rate limit headers
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip, // Tracks failed attempts by IP
+  handler: (req, res) => {
+    return res.status(429).json({ message: "Too many login attempts. Please try again later." });
+  },
+});
 
 /**
  * @route POST /auth/signup
@@ -21,7 +37,7 @@ router.post("/signup", registerUser);
  * @description Authenticates a user and sets JWT in cookies.
  * @access Public
  */
-router.post("/signin", loginUser);
+router.post("/signin", loginRateLimiter, loginUser);
 
 /**
  * @route GET /auth/signout

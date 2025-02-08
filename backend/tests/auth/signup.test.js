@@ -6,17 +6,23 @@
 import request from "supertest";
 import app from "../../app.js";
 import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
 import dotenv from "dotenv";
 import User from "../../models/User.js"; // Import User model
 
 // Load environment variables
 dotenv.config();
 
+let mongoServer;
+
 /**
  * @beforeAll Connect to the test database before running tests
  */
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI, {
+  mongoServer = await MongoMemoryServer.create();
+  const mongoUri = mongoServer.getUri();
+
+  await mongoose.connect(mongoUri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
@@ -328,4 +334,5 @@ afterEach(async () => {
 afterAll(async () => {
   await User.deleteMany({});
   await mongoose.connection.close();
+  await mongoServer.stop();
 });
