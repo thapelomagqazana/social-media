@@ -12,7 +12,7 @@ import jwt from "jsonwebtoken";
 import User from "../../models/User.js";
 // import Post from "../../models/Post.js";
 // import Comment from "../../models/Comment.js";
-// import Follower from "../../models/Follower.js";
+import Follower from "../../models/Follower.js";
 
 // Load environment variables
 dotenv.config();
@@ -77,8 +77,8 @@ beforeAll(async () => {
   //   { content: "User's second comment", user: userId, post: adminId },
   // ]);
 
-  // // Add followers for the user
-  // await Follower.create([{ follower: adminId, following: userId }]);
+  // Add followers for the user
+  await Follower.create([{ follower: adminId, following: userId }]);
 });
 
 describe("DELETE /api/users/:userId - Delete User", () => {
@@ -122,42 +122,42 @@ describe("DELETE /api/users/:userId - Delete User", () => {
     expect(deletedUser).toBeNull();
   });
 
-  // /**
-  //  * ✅ Cascade delete works correctly (Posts, Comments, Followers)
-  //  */
-  // it("✅ Should cascade delete user's posts, followers, and comments", async () => {
-  //   // Re-create a user with data to delete
-  //   const testUser = await User.create({
-  //     name: "Cascade User",
-  //     email: "cascade@example.com",
-  //     password: "Cascade@123",
-  //     role: "user",
-  //   });
+  /**
+   * ✅ Cascade delete works correctly (Posts, Comments, Followers)
+   */
+  it("✅ Should cascade delete user's posts, followers, and comments", async () => {
+    // Re-create a user with data to delete
+    const testUser = await User.create({
+      name: "Cascade User",
+      email: "cascade@example.com",
+      password: "Cascade@123",
+      role: "user",
+    });
 
-  //   await Post.create([{ content: "Cascade User's post", user: testUser._id }]);
-  //   await Comment.create([{ content: "Cascade User's comment", user: testUser._id }]);
-  //   await Follower.create([{ follower: adminId, following: testUser._id }]);
+    // await Post.create([{ content: "Cascade User's post", user: testUser._id }]);
+    // await Comment.create([{ content: "Cascade User's comment", user: testUser._id }]);
+    await Follower.create([{ follower: adminId, following: testUser._id }]);
 
-  //   await request(app)
-  //     .delete(`/api/users/${testUser._id}`)
-  //     .set("Authorization", `Bearer ${adminToken}`);
+    await request(app)
+      .delete(`/api/users/${testUser._id}`)
+      .set("Authorization", `Bearer ${adminToken}`);
 
-  //   const posts = await Post.find({ user: testUser._id });
-  //   const comments = await Comment.find({ user: testUser._id });
-  //   const followers = await Follower.find({ following: testUser._id });
+    // const posts = await Post.find({ user: testUser._id });
+    // const comments = await Comment.find({ user: testUser._id });
+    const followers = await Follower.find({ following: testUser._id });
 
-  //   expect(posts.length).toBe(0);
-  //   expect(comments.length).toBe(0);
-  //   expect(followers.length).toBe(0);
-  // });
+    // expect(posts.length).toBe(0);
+    // expect(comments.length).toBe(0);
+    expect(followers.length).toBe(0);
+  });
 
-  // /**
-  //  * ✅ Deleting a user updates follower counts correctly
-  //  */
-  // it("✅ Should remove deleted user from followers list", async () => {
-  //   const remainingFollowers = await Follower.find({ following: userId });
-  //   expect(remainingFollowers.length).toBe(0);
-  // });
+  /**
+   * ✅ Deleting a user updates follower counts correctly
+   */
+  it("✅ Should remove deleted user from followers list", async () => {
+    const remainingFollowers = await Follower.find({ following: userId });
+    expect(remainingFollowers.length).toBe(0);
+  });
 
   // /**
   //  * ✅ Deleting a user updates post references correctly
@@ -281,7 +281,7 @@ afterAll(async () => {
   await User.deleteMany({});
   // await Post.deleteMany({});
   // await Comment.deleteMany({});
-  // await Follower.deleteMany({});
+  await Follower.deleteMany({});
   await mongoose.connection.close();
   await mongoServer.stop();
 });

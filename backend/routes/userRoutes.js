@@ -46,8 +46,8 @@ router.delete("/:userId", protect, authorize(["admin", "user"]), deleteUser);
 
 /**
  * @route   GET /api/users/:userId/followers
- * @desc    Get all followers of a user
- * @access  Private (Only authenticated users can view followers)
+ * @desc    Get a paginated list of followers for a user
+ * @access  Public (Authentication may be required based on app logic)
  */
 router.get("/:userId/followers", protect, getUserFollowers);
 

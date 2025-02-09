@@ -5,6 +5,7 @@
  */
 
 import User from "../models/User.js";
+import Follower from "../models/Follower.js";
 import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import redisClient from "../config/redisClient.js";
@@ -225,12 +226,12 @@ export const deleteUser = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized to delete this user" });
     }
 
-    // // 3️⃣ Cascade delete related data
-    // await Promise.all([
-    //   Post.deleteMany({ userId }),           // Delete user’s posts
-    //   Comment.deleteMany({ userId }),        // Delete user’s comments
-    //   Follow.deleteMany({ $or: [{ followerId: userId }, { followingId: userId }] }), // Remove follow relationships
-    // ]);
+    // Cascade delete related data
+    await Promise.all([
+      // Post.deleteMany({ userId }),           // Delete user’s posts
+      // Comment.deleteMany({ userId }),        // Delete user’s comments
+      Follower.deleteMany({ $or: [{ following: userId }, { follower: userId }] }), // Remove follow relationships
+    ]);
 
     // Delete the user
     await User.findByIdAndDelete(userId);
@@ -243,36 +244,48 @@ export const deleteUser = async (req, res) => {
 };
 
 /**
- * Get User Followers
- * - Retrieves all followers of a specific user.
- * - Uses **Mongoose aggregation** for optimized data retrieval.
- * - Returns follower details such as **ID, name, and avatar**.
- * 
- * @route   GET /api/users/:userId/followers
- * @access  Private
- * @param {Request} req - Express request object
- * @param {Response} res - Express response object
+ * @route GET /api/users/:userId/followers
+ * @description Get a user's followers with pagination
+ * @access Public
  */
 export const getUserFollowers = async (req, res) => {
   try {
     const { userId } = req.params;
+    const { page = 1, limit = 10 } = req.query; // Default page: 1, limit: 10
 
-    // Validate user existence
-    const user = await User.findById(userId);
-    if (!user) {
+    // Validate userId format to avoid MongoDB errors
+    if (!isValidObjectId(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    // Check if user exists
+    const userExists = await User.exists({ _id: userId });
+    if (!userExists) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Fetch followers with populated user details (name & avatar)
-    const followers = await User.find({ following: userId }).select("name avatar");
+    // Convert pagination params to numbers
+    const pageNum = Math.max(1, parseInt(page)); // Ensure page is at least 1
+    const limitNum = Math.max(1, Math.min(100, parseInt(limit))); // Set a reasonable max limit (100)
 
-    return res.status(200).json({
-      success: true,
-      count: followers.length,
+    // Use indexed query for performance
+    const followers = await Follower.find({ following: userId })
+      .populate("follower", "name email avatar") // Populate follower details
+      .sort({ createdAt: -1 }) // Most recent followers first
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum)
+      .lean(); // Convert to plain JSON for efficiency
+
+    // Get total followers count for pagination info
+    const totalFollowers = await Follower.countDocuments({ following: userId });
+
+    res.status(200).json({
       followers,
+      totalFollowers,
+      currentPage: pageNum,
+      totalPages: Math.ceil(totalFollowers / limitNum),
     });
   } catch (error) {
-    console.error("Error fetching followers:", error);
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: `Internal Server Error: ${error.message}` });
   }
 };

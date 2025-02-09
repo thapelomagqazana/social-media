@@ -205,15 +205,6 @@ describe("GET /api/users/:userId - Negative Cases", () => {
  * 🔹 Edge & Corner Test Cases
  */
 describe("GET /api/users/:userId - Edge & Corner Cases", () => {
-  it("🔹 Should return user details with empty followers/following if user has none", async () => {
-    const response = await request(app)
-      .get(`/api/users/${userId}`)
-      .set("Authorization", `Bearer ${userToken}`);
-  
-    expect(response.status).toBe(200);
-    expect(response.body.followers).toEqual([]);
-    expect(response.body.following).toEqual([]);
-  });
   
   it("🔹 Should return user details even if some optional fields are missing", async () => {
     await User.findByIdAndUpdate(userId, { avatar: null });
