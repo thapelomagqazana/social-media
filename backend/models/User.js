@@ -58,6 +58,16 @@ const userSchema = new mongoose.Schema(
       type: String, 
       default: "" 
     },
+    followerCount: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
+    followingCount: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
     createdAt: {
         type: Date,
         default: Date.now,

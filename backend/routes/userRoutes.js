@@ -11,7 +11,8 @@ import {
   updateUser,
   deleteUser,
   getUserFollowers,
-  getUserFollowing
+  getUserFollowing,
+  followUser
 } from "../controllers/userController.js";
 import { protect, validateQueryParams, authorize } from "../middleware/authMiddleware.js";
 
@@ -58,5 +59,12 @@ router.get("/:userId/followers", protect, getUserFollowers);
  * @access  Public (Authentication may be required)
  */
 router.get("/:userId/following", protect, getUserFollowing);
+
+/**
+ * @route   POST /api/users/:userId/follow
+ * @desc    Follow a user
+ * @access  Private (Requires authentication)
+ */
+router.post("/:userId/follow", protect, followUser);
 
 export default router;

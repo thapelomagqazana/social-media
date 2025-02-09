@@ -347,3 +347,56 @@ export const getUserFollowing = async (req, res) => {
     res.status(500).json({ message: `Internal Server Error: ${error.message}` });
   }
 };
+
+/**
+ * @function followUser
+ * @description Allows an authenticated user to follow another user, ensuring atomicity to avoid race conditions.
+ * @param {Object} req - Express request object (contains logged-in user ID)
+ * @param {Object} res - Express response object
+ * @returns {JSON} Success or failure message
+ */
+export const followUser = async (req, res) => {
+  const { userId } = req.params;
+  const loggedInUserId = req.user._id.toString();
+
+  try {
+    // Validate userId format
+    if (!isValidObjectId(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    // Prevent self-following
+    if (loggedInUserId === userId) {
+      return res.status(400).json({ message: "You cannot follow yourself" });
+    }
+
+    // Check if the user to be followed exists
+    const userToFollow = await User.findById(userId);
+    if (!userToFollow) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Perform an atomic update to prevent race conditions
+    const result = await Follower.updateOne(
+      { follower: loggedInUserId, following: userId },
+      { $setOnInsert: { follower: loggedInUserId, following: userId } },
+      { upsert: true }
+    );
+
+    if (result.upsertedCount === 0) {
+      return res.status(400).json({ message: "Already following this user" });
+    }
+
+    // Increment follow count for both users
+    await User.updateOne({ _id: loggedInUserId }, { $inc: { followingCount: 1 } });
+    await User.updateOne({ _id: userId }, { $inc: { followerCount: 1 } });
+
+    // Invalidate Redis cache for the user's following list
+    await redisClient.del(`user:${loggedInUserId}:following`);
+    await redisClient.del(`user:${userId}:followers`);
+
+    res.status(200).json({ message: "Successfully followed user" });
+  } catch (error) {
+    res.status(500).json({ message: `Internal Server Error: ${error.message}` });
+  }
+};
