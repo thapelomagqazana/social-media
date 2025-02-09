@@ -10,7 +10,8 @@ import {
   getUserDetails,
   updateUser,
   deleteUser,
-  getUserFollowers
+  getUserFollowers,
+  getUserFollowing
 } from "../controllers/userController.js";
 import { protect, validateQueryParams, authorize } from "../middleware/authMiddleware.js";
 
@@ -50,5 +51,12 @@ router.delete("/:userId", protect, authorize(["admin", "user"]), deleteUser);
  * @access  Public (Authentication may be required based on app logic)
  */
 router.get("/:userId/followers", protect, getUserFollowers);
+
+/**
+ * @route   GET /api/users/:userId/following
+ * @desc    Get a paginated list of users that a user is following
+ * @access  Public (Authentication may be required)
+ */
+router.get("/:userId/following", protect, getUserFollowing);
 
 export default router;

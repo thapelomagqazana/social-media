@@ -289,3 +289,61 @@ export const getUserFollowers = async (req, res) => {
     res.status(500).json({ message: `Internal Server Error: ${error.message}` });
   }
 };
+
+/**
+ * @function getUserFollowing
+ * @description Retrieves a paginated list of users that a given user is following, with caching optimization.
+ * @param {Object} req - Express request object (contains userId, page, limit)
+ * @param {Object} res - Express response object
+ * @returns {JSON} List of users the given user is following
+ */
+export const getUserFollowing = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    // Validate userId format
+    if (!isValidObjectId(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    // Check Redis cache for follow list
+    const cacheKey = `user:${userId}:following:page:${page}:limit:${limit}`;
+    const cachedData = await redisClient.get(cacheKey);
+
+    if (cachedData) {
+      return res.status(200).json(JSON.parse(cachedData));
+    }
+
+    // Verify if the user exists
+    const userExists = await User.exists({ _id: userId });
+    if (!userExists) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Fetch users the given user follows
+    const following = await Follower.find({ follower: userId })
+      .populate({ path: "following", select: "name email avatar" })
+      .skip(skip)
+      .limit(limit);
+
+    // Get total count for pagination
+    const totalFollowing = await Follower.countDocuments({ follower: userId });
+
+    const response = {
+      following: following.map(f => f.following),
+      totalFollowing,
+      currentPage: page,
+      totalPages: Math.ceil(totalFollowing / limit)
+    };
+
+    // Cache the response for faster future retrieval
+    await redisClient.setex(cacheKey, 3600, JSON.stringify(response));
+
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ message: `Internal Server Error: ${error.message}` });
+  }
+};
