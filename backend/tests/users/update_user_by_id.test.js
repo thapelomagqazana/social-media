@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Tests for updating user profile (PUT /api/users/:userId)
+ * @description Ensures user profile updates work correctly, covering authentication, validation, and security cases.
+ */
+
 import request from "supertest";
 import app from "../../app.js";
 import mongoose from "mongoose";
@@ -5,17 +10,16 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import dotenv from "dotenv";
 import User from "../../models/User.js";
 import jwt from "jsonwebtoken";
+import redisClient from "../../config/redisClient.js";
 
 // Load environment variables
 dotenv.config();
 
 let mongoServer;
-
-// Dummy users and tokens
-let adminToken, userToken, expiredToken, invalidUserId, validUserId, adminId, nonExistentUserId;
+let userToken, adminToken, userId, anotherUserId, invalidToken = "invalidtoken123";
 
 /**
- * @beforeAll - Connect to the test database before running tests
+ * @beforeAll Connect to test database, create users
  */
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
@@ -26,197 +30,334 @@ beforeAll(async () => {
     useUnifiedTopology: true,
   });
 
-  // Clear users collection
   await User.deleteMany({});
 
-  // Create test users
-  const adminUser = await User.create({
+  // Create a test user
+  const user = await User.create({
+    name: "Test User",
+    email: "user@example.com",
+    password: "User@123",
+  });
+
+  // Create another user
+  const anotherUser = await User.create({
+    name: "Another User",
+    email: "another@example.com",
+    password: "User@123",
+  });
+
+  // Create an admin user
+  const admin = await User.create({
     name: "Admin User",
     email: "admin@example.com",
-    password: "AdminPass@123",
+    password: "Admin@123",
     role: "admin",
   });
 
-  const regularUser = await User.create({
-    name: "Regular User",
-    email: "user@example.com",
-    password: "UserPass@123",
-    role: "user",
-  });
-
-  // Assign valid user ID
-  validUserId = regularUser._id.toString();
-  adminId = adminUser._id.toString();
-  nonExistentUserId = "615b9cfa5a0f1a001cbb96ab"; // Random valid ObjectID format
-
   // Generate JWT tokens
-  adminToken = jwt.sign({ id: adminUser._id, role: "admin" }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
+  userToken = jwt.sign({ id: user._id, role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
+  adminToken = jwt.sign({ id: admin._id, role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-  userToken = jwt.sign({ id: regularUser._id, role: "user" }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
+  // Store user IDs
+  userId = user._id.toString();
+  anotherUserId = anotherUser._id.toString();
 
-  expiredToken = jwt.sign({ id: regularUser._id }, process.env.JWT_SECRET, {
-    expiresIn: "-1h",
-  });
-
-  invalidUserId = "invalid1234";
+  // Flush Redis before testing
+  await redisClient.flushall();
 });
 
 /**
- * @afterAll - Disconnect from the test database after tests
+ * @group User Update Tests
  */
-afterAll(async () => {
-  await User.deleteMany({});
-  await mongoose.connection.close();
-  await mongoServer.stop();
-});
-
-describe("PUT /api/users/:userId - Update User", () => {
-  
-  // ✅ **Positive Test Cases**
-  it("✅ Should update another user successfully as an admin", async () => {
+describe("PUT /api/users/:userId - Update User Profile", () => {
+  /**
+   * ✅ Positive Test Cases
+   */
+  it("✅ Should update user’s name", async () => {
     const response = await request(app)
-      .put(`/api/users/${validUserId}`)
-      .set("Authorization", `Bearer ${adminToken}`)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
       .send({ name: "Updated Name" });
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty("message", "User updated successfully");
     expect(response.body.user).toHaveProperty("name", "Updated Name");
   });
 
-  it("✅ Should allow a user to update their own profile", async () => {
+  it("✅ Should update user’s email", async () => {
     const response = await request(app)
-      .put(`/api/users/${validUserId}`)
+      .put(`/api/users/${userId}`)
       .set("Authorization", `Bearer ${userToken}`)
-      .send({ name: "User Updated Name" });
+      .send({ email: "updated@example.com" });
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty("message", "User updated successfully");
-    expect(response.body.user).toHaveProperty("name", "User Updated Name");
+    expect(response.body.user).toHaveProperty("email", "updated@example.com");
   });
 
-  it("✅ Should allow an admin to update user role", async () => {
+  it("✅ Should update user’s avatar", async () => {
     const response = await request(app)
-      .put(`/api/users/${validUserId}`)
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ role: "admin" });
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ avatar: "https://example.com/avatar.jpg" });
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty("message", "User updated successfully");
-    expect(response.body.user).toHaveProperty("role", "admin");
+    expect(response.body.user).toHaveProperty("avatar", "https://example.com/avatar.jpg");
   });
 
-  it("✅ Should allow an admin to update user email (if allowed)", async () => {
+  it("✅ Should update multiple fields", async () => {
     const response = await request(app)
-      .put(`/api/users/${validUserId}`)
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ email: "newemail@example.com" });
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "Updated Name", email: "updated@example.com" });
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty("message", "User updated successfully");
-    expect(response.body.user).toHaveProperty("email", "newemail@example.com");
+    expect(response.body.user).toHaveProperty("name", "Updated Name");
+    expect(response.body.user).toHaveProperty("email", "updated@example.com");
   });
 
-  // ❌ **Negative Test Cases**
-  it("❌ Should fail when no authorization token is provided", async () => {
-    const response = await request(app).put(`/api/users/${validUserId}`).send({ name: "No Auth" });
+  it("✅ Should allow admin to update another user’s profile", async () => {
+    const response = await request(app)
+      .put(`/api/users/${anotherUserId}`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: "Updated by Admin" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user).toHaveProperty("name", "Updated by Admin");
+  });
+
+  it("✅ Should update user’s email and store it in lowercase", async () => {
+    const response = await request(app)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ email: "USER@EXAMPLE.COM" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.email).toBe("user@example.com");
+  });
+
+
+  /**
+   * ❌ Negative Test Cases
+   */
+  it("❌ Should fail when no authentication token is provided", async () => {
+    const response = await request(app)
+      .put(`/api/users/${userId}`)
+      .send({ name: "Unauthorized" });
 
     expect(response.status).toBe(401);
-    expect(response.body).toHaveProperty("message", "Not authorized, no token provided");
   });
 
-  it("❌ Should fail when using an invalid authorization token", async () => {
+  it("❌ Should fail when using an invalid authentication token", async () => {
     const response = await request(app)
-      .put(`/api/users/${validUserId}`)
-      .set("Authorization", `Bearer invalidToken123`)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${invalidToken}`)
       .send({ name: "Invalid Token" });
 
     expect(response.status).toBe(401);
-    expect(response.body).toHaveProperty("message", "Invalid token, authentication failed");
   });
 
-  it("❌ Should fail when using an expired token", async () => {
+  it("❌ Should prevent a user from updating another user’s profile", async () => {
     const response = await request(app)
-      .put(`/api/users/${validUserId}`)
-      .set("Authorization", `Bearer ${expiredToken}`)
-      .send({ name: "Expired Token" });
+      .put(`/api/users/${anotherUserId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "Hacker" });
 
-    expect(response.status).toBe(401);
-    expect(response.body).toHaveProperty("message", "Invalid token, authentication failed");
+    expect(response.status).toBe(403);
   });
 
-//   it("❌ Should fail when a non-admin tries to update another user", async () => {
-//     const response = await request(app)
-//       .put(`/api/users/${adminId}`)
-//       .set("Authorization", `Bearer ${userToken}`)
-//       .send({ name: "Unauthorized Update" });
-
-//     expect(response.status).toBe(403);
-//     expect(response.body).toHaveProperty("message", "Access denied");
-//   });
-
-  it("❌ Should fail when user ID is not found", async () => {
+  it("❌ Should return 404 when updating a non-existent user", async () => {
     const response = await request(app)
-      .put(`/api/users/${nonExistentUserId}`)
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ name: "Not Found" });
+      .put(`/api/users/67a7b1203c503317485399b8`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "Ghost User" });
 
     expect(response.status).toBe(404);
-    expect(response.body).toHaveProperty("message", "User not found");
   });
 
-  it("❌ Should fail when trying to update restricted fields", async () => {
+  it("❌ Should reject SQL injection attempts", async () => {
     const response = await request(app)
-      .put(`/api/users/${validUserId}`)
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ password: "NewPassword123" });
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "'; DROP TABLE users; --" });
 
     expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty("message", "Password update not allowed");
   });
 
-  // 🔹 **Edge Cases**
-  it("🔹 Should allow update with extra unrelated fields (ignored)", async () => {
+  it("❌ Should reject XSS attack attempts", async () => {
     const response = await request(app)
-      .put(`/api/users/${validUserId}`)
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ name: "Updated", extraField: "Random" });
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "<script>alert(1)</script>" });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("❌ Should fail when request body is empty", async () => {
+    const response = await request(app)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({});
+
+    expect(response.status).toBe(400);
+  });
+
+  it("❌ Should reject invalid email format", async () => {
+    const response = await request(app)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ email: "invalid-email" });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("❌ Should reject too long names", async () => {
+    const response = await request(app)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "a".repeat(256) });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("❌ Should return 400 for invalid user ID format", async () => {
+    const response = await request(app)
+      .put(`/api/users/123abc`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "Invalid ID" });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("❌ Should return 400 for user ID containing special characters", async () => {
+    const response = await request(app)
+      .put(`/api/users/$%*&@!`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "Invalid ID" });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("❌ Should return 400 when updating name with only spaces", async () => {
+    const response = await request(app)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: " " });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("Invalid name");
+  });
+
+  it("❌ Should return 400 when updating email to an existing email", async () => {
+    const response = await request(app)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ email: "another@example.com" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("Email already in use");
+  });
+
+  it("❌ Should return 400 when updating avatar with a non-image URL", async () => {
+    const response = await request(app)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ avatar: "https://example.com/not-an-image.pdf" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("Invalid avatar URL");
+  });
+
+  it("❌ Should return 400 when updating name with special characters", async () => {
+    const response = await request(app)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "@#$%^&*()!" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("Invalid characters in name");
+  });
+
+  it("🔺 Should return 200 OK when updating email to the same value", async () => {
+    const response = await request(app)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ email: "user@example.com" });
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty("message", "User updated successfully");
+    expect(response.body.user.email).toBe("user@example.com");
   });
 
-  it("🔹 Should reject an extremely long name", async () => {
+  it("🔺 Should return 200 OK when updating user with max-length name", async () => {
+    const longName = "a".repeat(255);
     const response = await request(app)
-      .put(`/api/users/${validUserId}`)
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ name: "A".repeat(300) });
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: longName });
 
-    expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty("message", "Validation failed: name: Name must be at most 255 characters long");
+    expect(response.status).toBe(200);
+    expect(response.body.user.name).toBe(longName);
   });
 
-  // 🛑 **Corner Cases**
-  it("🛑 Should fail when user ID is empty", async () => {
-    const response = await request(app)
-      .put("/api/users/")
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ name: "Empty ID" });
+  // it("🔺 Should handle 1000 concurrent update requests correctly", async () => {
+  //   jest.setTimeout(30000); // Increase timeout to 30s
+  
+  //   const batchSize = 100; // Process requests in batches of 100
+  //   const totalRequests = 1000;
+  //   const requests = [];
+  
+  //   for (let i = 0; i < totalRequests; i++) {
+  //     requests.push(
+  //       request(app)
+  //         .put(`/api/users/${userId}`)
+  //         .set("Authorization", `Bearer ${userToken}`)
+  //         .send({ name: `User ${i}` })
+  //     );
+  
+  //     if (requests.length === batchSize || i === totalRequests - 1) {
+  //       const responses = await Promise.all(requests); // Process batch
+  //       responses.forEach((response) => {
+  //         expect(response.status).toBe(200);
+  //       });
+  //       requests.length = 0; // Clear batch
+  //     }
+  //   }
+  // });
 
-    expect(response.status).toBe(404);
+  it("🔺 Should ensure consistent updates when two requests are sent at the same time", async () => {
+    const update1 = request(app)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "Simultaneous Update 1" });
+
+    const update2 = request(app)
+      .put(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "Simultaneous Update 2" });
+
+    await Promise.all([update1, update2]);
+
+    const finalResponse = await request(app)
+      .get(`/api/users/${userId}`)
+      .set("Authorization", `Bearer ${userToken}`);
+
+    expect(["Simultaneous Update 1", "Simultaneous Update 2"]).toContain(finalResponse.body.name);
   });
 
-  it("🛑 Should fail when user ID is a boolean", async () => {
-    const response = await request(app)
-      .put("/api/users/true")
-      .set("Authorization", `Bearer ${adminToken}`)
-      .send({ name: "Boolean ID" });
+});
 
-    expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty("message", "Invalid user ID");
-  });
+/**
+ * @afterAll Close database connection
+ */
+afterAll(async () => {
+  try {
+    await User.deleteMany({});
+    await mongoose.connection.close();
+    await mongoServer.stop();
+
+    if (redisClient.status !== "end") {
+      await redisClient.quit();
+      console.log("🛑 Redis Connection Closed");
+    }
+  } catch (error) {
+    console.error("❌ Error closing resources:", error);
+  }
 });

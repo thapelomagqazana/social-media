@@ -6,6 +6,11 @@
 
 import User from "../models/User.js";
 import mongoose from "mongoose";
+import asyncHandler from "express-async-handler";
+import redisClient from "../config/redisClient.js";
+
+// Function to check valid ObjectId format
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id)
 
 /**
  * @function getUsers
@@ -57,50 +62,52 @@ export const getUsers = async (req, res) => {
       totalPages: Math.ceil(totalUsers / limitNumber),
     });
   } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({ message: "Server error" });
+    // console.error("Error fetching users:", error.message);
+    res.status(500).json({ message: `Server error: ${error.message}` });
   }
 };
 
 /**
- * @function getUserById
- * @description Retrieves a user by ID.
- * @param {Object} req - Express request object containing `userId` as a URL parameter.
+ * @function getUserDetails
+ * @description Fetches a user's details from the database (with caching).
+ * @param {Object} req - Express request object (contains userId).
  * @param {Object} res - Express response object.
- * @returns {Object} JSON response containing the user data (excluding password).
  */
-export const getUserById = async (req, res) => {
+export const getUserDetails = asyncHandler(async (req, res) => {
   try {
     const { userId } = req.params;
-    const requesterId = req.user.id;
-    const isAdmin = req.user.role === "admin";
 
-    // Ensure user can only fetch their profile or admin can fetch any user
-    if (!isAdmin && userId !== requesterId) {
+    // Validate user ID format
+    if (!isValidObjectId(userId) || /[<>'";()=]/.test(userId)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
+    }
+
+    if (req.user.id !== userId && req.user.role !== "admin") {
       return res.status(403).json({ message: "Access denied" });
     }
+    
 
-    // XSS Attack Prevention
-    const xssRegex = /<script>|<\/script>/i;
-    if (xssRegex.test(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
+    // Check Redis cache first
+    const cachedUser = await redisClient.get(`user:${userId}`);
+    if (cachedUser) {
+      return res.status(200).json(JSON.parse(cachedUser));
     }
 
-    // Validate ObjectID format
-    if (!mongoose.Types.ObjectId.isValid(userId) || !isNaN(userId) || userId.length > 24) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
+    // Fetch user from MongoDB
     const user = await User.findById(userId).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json({ user });
+    // Cache user data in Redis
+    await redisClient.setex(`user:${userId}`, 3600, JSON.stringify(user));
+
+    res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("❌ Server Error in GET /api/users/:userId:", error.message);
+    res.status(500).json({ message: `Internal Server Error: ${error.message}` });
   }
-};
+});
 
 /**
  * @function updateUser
@@ -112,39 +119,75 @@ export const getUserById = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const updateData = req.body;
-    const requestingUser = req.user; // Extract user from auth middleware
 
-    // Validate user ID format before querying MongoDB
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
+    // Validate ObjectId
+    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
     }
 
-    // Prevent non-admin users from updating others
-    if (requestingUser.role !== "admin" && requestingUser.id !== userId) {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
-    // Prevent restricted fields from being updated
-    if (updateData.password) {
-      return res.status(400).json({ message: "Password update not allowed" });
-    }
-
-    // Prevent `_id` modification
-    delete updateData._id;
-
-    // Find and update the user
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $set: updateData },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedUser) {
+    // Fetch user from DB
+    let user = await User.findById(userId);
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json({ message: "User updated successfully", user: updatedUser });
+    const existingUser = await User.findOne({ email: req.body.email });
+    if (existingUser && existingUser._id.toString() !== req.params.userId) {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+
+
+    // Authorization Check (Prevent user from updating another user's profile)
+    if (req.user.id !== userId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const imageRegex = /\.(jpg|jpeg|png|gif)$/i;
+    if (req.body.avatar && !imageRegex.test(req.body.avatar)) {
+      return res.status(400).json({ message: "Invalid avatar URL" });
+    }
+
+
+    // Validate Request Body (Reject empty updates)
+    const updateFields = {};
+    
+    if (req.body.name) {
+      if (req.body.name.trim().length === 0){
+        return res.status(400).json({ message: "Invalid name" });
+      }
+      if (req.body.name.length > 255) {
+        return res.status(400).json({ message: "Name too long" });
+      }
+      if (/['";<>()=]/.test(req.body.name)) {
+        return res.status(400).json({ message: "Invalid characters in name" });
+      }
+      updateFields.name = req.body.name;
+    }
+
+    if (req.body.email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.body.email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+      updateFields.email = req.body.email;
+    }
+
+    if (req.body.avatar) {
+      updateFields.avatar = req.body.avatar;
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({ message: "No valid fields to update" });
+    }
+
+    // Update User (Use $set to avoid unnecessary field updates)
+    user = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    return res.status(200).json({ user });
+
   } catch (error) {
     // Catch Mongoose validation errors
     if (error.name === "ValidationError") {
@@ -165,36 +208,37 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const requesterId = req.user.id;
-    const requesterRole = req.user.role;
 
-    // Validate ObjectID format
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
+  
+    if (!isValidObjectId(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    // Prevent Non-Admin from deleting other users
-    if (requesterId !== userId && requesterRole !== "admin") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
-    // Find user
+    // Check if the user exists
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Delete user
+    // Ensure user can only delete their account unless they are an admin
+    if (req.user.role !== "admin" && req.user.id !== userId) {
+      return res.status(403).json({ message: "Unauthorized to delete this user" });
+    }
+
+    // // 3️⃣ Cascade delete related data
+    // await Promise.all([
+    //   Post.deleteMany({ userId }),           // Delete user’s posts
+    //   Comment.deleteMany({ userId }),        // Delete user’s comments
+    //   Follow.deleteMany({ $or: [{ followerId: userId }, { followingId: userId }] }), // Remove follow relationships
+    // ]);
+
+    // Delete the user
     await User.findByIdAndDelete(userId);
 
-    // Send appropriate messages
-    if (requesterId === userId) {
-      return res.status(200).json({ message: "Your account has been deleted" });
-    } else {
-      return res.status(200).json({ message: "User deleted successfully" });
-    }
+    return res.status(200).json({ message: "User and related data deleted successfully" });
+
   } catch (error) {
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: `Server error: ${error.message}` });
   }
 };
 

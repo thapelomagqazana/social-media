@@ -44,6 +44,21 @@ export const protect = async (req, res, next) => {
 };
 
 /**
+ * @function authorize
+ * @description Middleware to authorize users based on roles.
+ * @param {Array<string>} allowedRoles - Roles permitted to access the route.
+ * @returns {Function} Middleware function to check user roles.
+ */
+export const authorize = (allowedRoles = []) => {
+  return (req, res, next) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Access denied, insufficient permissions" });
+    }
+    next();
+  };
+};
+
+/**
  * @function validateQueryParams
  * @description Validates query parameters to prevent invalid input.
  * @param {Object} req - Express request object.

@@ -58,8 +58,8 @@ const userSchema = new mongoose.Schema(
       type: String, 
       default: "" 
     },
-    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],  // List of followers
-    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],  // List of users being followed
+    // followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],  // List of followers
+    // following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],  // List of users being followed
     createdAt: {
         type: Date,
         default: Date.now,

@@ -7,12 +7,12 @@
 import express from "express";
 import {
   getUsers,
-  getUserById,
+  getUserDetails,
   updateUser,
   deleteUser,
   getUserFollowers
 } from "../controllers/userController.js";
-import { protect, validateQueryParams } from "../middleware/authMiddleware.js";
+import { protect, validateQueryParams, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -28,7 +28,7 @@ router.get("/", protect, validateQueryParams, getUsers);
  * @description Retrieves a single user by ID.
  * @access Protected (Requires authentication)
  */
-router.get("/:userId", protect, getUserById);
+router.get("/:userId", protect, validateQueryParams, getUserDetails);
 
 /**
  * @route PUT /api/users/:userId
@@ -42,7 +42,7 @@ router.put("/:userId", protect, updateUser);
  * @description Deletes a user account (only the signed-in user can delete their own account).
  * @access Protected (Requires authentication & authorization)
  */
-router.delete("/:userId", protect, deleteUser);
+router.delete("/:userId", protect, authorize(["admin", "user"]), deleteUser);
 
 /**
  * @route   GET /api/users/:userId/followers
