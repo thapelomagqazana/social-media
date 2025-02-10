@@ -8,7 +8,8 @@ import express from "express";
 import { 
     createPost,
     getPosts,
-    getPostById
+    getPostById,
+    deletePost
  } from "../controllers/postController.js";
 import { protect, validateQueryParams } from "../middleware/authMiddleware.js";
 import { postRateLimiter } from "../middleware/rateLimiter.js";
@@ -36,6 +37,20 @@ router.get("/", protect, validateQueryParams, getPosts);
  * @access Private (Requires authentication)
  */
 router.get("/:postId", protect, getPostById);
+
+/**
+ * @route DELETE /api/posts/:postId
+ * @description Soft delete post by id.
+ * @access Private (Requires authentication)
+ */
+router.delete("/:postId", protect, deletePost);
+
+// /**
+//  * @route POST /api/posts/:postId/like
+//  * @description Like the post.
+//  * @access Private (Requires authentication)
+//  */
+// router.delete("/:postId", protect, deletePost);
 
 
 export default router;

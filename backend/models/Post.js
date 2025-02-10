@@ -29,7 +29,13 @@ const postSchema = new mongoose.Schema(
       },
     },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    likesCount: { type: Number, default: 0 },
     // comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
+
+    // Soft Delete Fields
+    deleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
+
     createdAt: {
         type: Date,
         default: Date.now,

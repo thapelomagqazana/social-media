@@ -51,59 +51,64 @@ export const createPost = async (req, res) => {
 
 /**
  * @function getPosts
- * @description Retrieves paginated posts (newsfeed) with user details, caching enabled.
+ * @description Retrieves paginated posts (newsfeed) with user details, caching enabled. Filters out soft-deleted posts.
  * @route GET /api/posts
  * @access Private (Requires authentication)
  */
 export const getPosts = async (req, res) => {
     try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
-      const skip = (page - 1) * limit;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
 
-      const userId = req.query.userId;
+        const userId = req.query.userId;
 
-      // Validate userId format
-      if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).json({ message: "Invalid user ID format" });
-      }
-  
-      // Cache key for this request
-      const cacheKey = `posts:page=${page}:limit=${limit}`;
-  
-      // Check Redis cache
-      const cachedData = await redisClient.get(cacheKey);
-      if (cachedData) {
-        return res.status(200).json(JSON.parse(cachedData)); // Return cached response
-      }
+        // Validate userId format
+        if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: "Invalid user ID format" });
+        }
 
-      const query = userId ? { user: userId } : {};
-  
-      // Fetch posts with user details (prefetching)
-      const posts = await Post.find(query)
-        .populate("user", "name avatar") // Load user name and avatar
-        .sort({ createdAt: -1 }) // Sort by newest first
-        .skip(skip)
-        .limit(limit);
-  
-      // Get total count for pagination
-      const totalPosts = await Post.countDocuments();
-  
-      const response = {
-        posts,
-        totalPosts,
-        currentPage: page,
-        totalPages: Math.ceil(totalPosts / limit),
-      };
-  
-      // Cache result for 5 minutes
-      await redisClient.setex(cacheKey, 300, JSON.stringify(response));
-  
-      return res.status(200).json(response);
+        // Cache key for this request
+        const cacheKey = `posts:page=${page}:limit=${limit}:userId=${userId || "all"}`;
+
+        // Check Redis cache
+        const cachedData = await redisClient.get(cacheKey);
+        if (cachedData) {
+            return res.status(200).json(JSON.parse(cachedData)); // Return cached response
+        }
+
+        // Query for fetching posts, ensuring soft-deleted posts are excluded
+        const query = { deleted: false }; // Exclude soft-deleted posts
+        if (userId) {
+            query.user = userId;
+        }
+
+        // Fetch posts with user details (prefetching)
+        const posts = await Post.find(query)
+            .populate("user", "name avatar") // Load user name and avatar
+            .sort({ createdAt: -1 }) // Sort by newest first
+            .skip(skip)
+            .limit(limit);
+
+        // Get total count for pagination (excluding soft-deleted posts)
+        const totalPosts = await Post.countDocuments(query);
+
+        const response = {
+            posts,
+            totalPosts,
+            currentPage: page,
+            totalPages: Math.ceil(totalPosts / limit),
+        };
+
+        // Cache result for 5 minutes
+        await redisClient.setex(cacheKey, 300, JSON.stringify(response));
+
+        return res.status(200).json(response);
     } catch (error) {
-      return res.status(500).json({ message: `Internal server error: ${error.message}` });
+        return res.status(500).json({ message: `Internal server error: ${error.message}` });
     }
 };
+
 
 /**
  * @function getPostById
@@ -113,45 +118,138 @@ export const getPosts = async (req, res) => {
  * @param {Object} res - Express response object.
  * @returns {JSON} Returns the requested post or an error message.
  */
+/**
+ * @function getPostById
+ * @description Fetches a single post by ID, allowing admins to see soft deleted posts.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 export const getPostById = async (req, res) => {
     try {
       const { postId } = req.params;
+      const includeDeleted = req.query.includeDeleted === "true"; // Convert to boolean
   
-      // Validate postId format
       if (!mongoose.Types.ObjectId.isValid(postId)) {
         return res.status(400).json({ message: "Invalid post ID format" });
       }
-  
+
       // Check if the post is cached in Redis
       const cachedPost = await redisClient.get(`post:${postId}`);
       if (cachedPost) {
         return res.status(200).json({ post: JSON.parse(cachedPost), cached: true });
       }
   
-      // Fetch the post from MongoDB
-      const post = await Post.findById(postId)
-        .populate("user", "name avatar") // Include user details
-        .lean(); // Optimize query performance
+      // Define query filter: Only allow fetching deleted posts if requested by an admin
+      const query = { _id: postId };
+      if (!includeDeleted || req.user.role !== "admin") {
+        query.deleted = false;
+      }
+  
+      // Fetch post with user details
+      const post = await Post.findOne(query).populate("user", "name avatar");
   
       if (!post) {
         return res.status(404).json({ message: "Post not found" });
       }
-  
+
       // Cache the post in Redis for future requests (expires in 60 minutes)
-      await redisClient.setEx(`post:${postId}`, 3600, JSON.stringify(post));
-  
+      await redisClient.setex(`post:${postId}`, 3600, JSON.stringify(post));
+
       return res.status(200).json({ post, cached: false });
     } catch (error) {
-      return res.status(500).json({ message: "Internal Server Error" });
+      res.status(500).json({ message: `Server error: ${error.message}` });
     }
-  };
+};
   
-  /**
-   * @function invalidatePostCache
-   * @description Deletes a post from cache when it is updated or deleted.
-   * @param {string} postId - The ID of the post to be invalidated in the cache.
-   */
-  export const invalidatePostCache = async (postId) => {
+
+/**
+ * @function invalidatePostCache
+ * @description Deletes a post from cache when it is updated or deleted.
+ * @param {string} postId - The ID of the post to be invalidated in the cache.
+ */
+export const invalidatePostCache = async (postId) => {
     await redisClient.del(`post:${postId}`);
-  };
-  
+};
+
+/**
+ * @function deletePost
+ * @description Soft deletes a post (marks it as deleted instead of removing it).
+ * @param {Object} req - Express request object containing `postId`.
+ * @param {Object} res - Express response object.
+ * @returns {JSON} Success or error message.
+ */
+export const deletePost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    // Validate ObjectId
+    if (!postId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid post ID format" });
+    }
+
+    // Check if the post exists
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Authorization: Allow only the post owner or an admin to delete
+    if (req.user.id !== post.user.toString() && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized to delete this post" });
+    }
+
+    // Soft delete the post
+    post.deleted = true;
+    post.deletedAt = new Date();
+    await post.save();
+
+    return res.status(200).json({ message: "Post deleted successfully" });
+
+  } catch (error) {
+    res.status(500).json({ message: `Server error: ${error.message}` });
+  }
+};
+
+/**
+ * @function likePost
+ * @description Allows a user to like a post. Uses atomic updates to avoid race conditions.
+ * @route POST /api/posts/:postId/like
+ * @access Private (Requires authentication)
+ */
+export const likePost = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const userId = req.user._id; // Extract user ID from auth middleware
+
+        // Validate postId format
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ message: "Invalid post ID format" });
+        }
+
+        // Check if the post exists and is not soft-deleted
+        const post = await Post.findOne({ _id: postId, deleted: false });
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        // Perform atomic like operation
+        const result = await Post.findByIdAndUpdate(
+            postId,
+            { 
+                $addToSet: { likes: userId },  // Ensures user can like only once
+                $inc: { likesCount: 1 }        // Increments likes count
+            },
+            { new: true }
+        );
+
+        return res.status(200).json({
+            message: "Post liked successfully",
+            likesCount: result.likes.length,
+        });
+
+    } catch (error) {
+        return res.status(500).json({ message: `Internal server error: ${error.message}` });
+    }
+};
+
+
