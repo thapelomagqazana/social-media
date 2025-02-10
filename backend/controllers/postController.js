@@ -212,44 +212,85 @@ export const deletePost = async (req, res) => {
 
 /**
  * @function likePost
- * @description Allows a user to like a post. Uses atomic updates to avoid race conditions.
+ * @description Allows a user to like a post with atomic updates.
  * @route POST /api/posts/:postId/like
- * @access Private (Requires authentication)
+ * @access Private
  */
 export const likePost = async (req, res) => {
     try {
-        const { postId } = req.params;
-        const userId = req.user._id; // Extract user ID from auth middleware
-
-        // Validate postId format
-        if (!mongoose.Types.ObjectId.isValid(postId)) {
-            return res.status(400).json({ message: "Invalid post ID format" });
-        }
-
-        // Check if the post exists and is not soft-deleted
-        const post = await Post.findOne({ _id: postId, deleted: false });
-        if (!post) {
-            return res.status(404).json({ message: "Post not found" });
-        }
-
-        // Perform atomic like operation
-        const result = await Post.findByIdAndUpdate(
-            postId,
-            { 
-                $addToSet: { likes: userId },  // Ensures user can like only once
-                $inc: { likesCount: 1 }        // Increments likes count
-            },
-            { new: true }
-        );
-
-        return res.status(200).json({
-            message: "Post liked successfully",
-            likesCount: result.likes.length,
-        });
-
+      const { postId } = req.params;
+      const userId = req.user._id;
+  
+      // Validate post ID format
+      if (!mongoose.Types.ObjectId.isValid(postId)) {
+        return res.status(400).json({ message: "Invalid post ID format" });
+      }
+  
+      // Find post
+      const post = await Post.findById(postId);
+      if (!post || post.deleted) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+  
+      // Check if user already liked the post
+      const alreadyLiked = post.likes.includes(userId);
+      if (alreadyLiked) {
+        return res.status(200).json({ message: "Post already liked" });
+      }
+  
+      // Atomic update to add like
+      await Post.updateOne(
+        { _id: postId },
+        { $addToSet: { likes: userId } } // $addToSet prevents duplicate entries
+      );
+  
+      return res.status(200).json({ message: "Post liked successfully" });
+  
     } catch (error) {
-        return res.status(500).json({ message: `Internal server error: ${error.message}` });
+      return res.status(500).json({ message: `Server error: ${error.message}` });
     }
 };
+
+/**
+ * @function unlikePost
+ * @description Allows a user to unlike a post.
+ * @route POST /api/posts/:postId/unlike
+ * @access Private
+ */
+export const unlikePost = async (req, res) => {
+    try {
+      const { postId } = req.params;
+      const userId = req.user._id;
+  
+      // Validate post ID format
+      if (!mongoose.Types.ObjectId.isValid(postId)) {
+        return res.status(400).json({ message: "Invalid post ID format" });
+      }
+  
+      // Find post
+      const post = await Post.findById(postId);
+      if (!post || post.deleted) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+  
+      // Check if user has already liked the post
+      if (!post.likes.includes(userId)) {
+        return res.status(200).json({ message: "Post not liked yet" });
+      }
+  
+      // Atomic update to remove like
+      await Post.updateOne(
+        { _id: postId },
+        { $pull: { likes: userId } } // $pull ensures the user is removed from likes array
+      );
+  
+      return res.status(200).json({ message: "Post unliked successfully" });
+  
+    } catch (error) {
+      return res.status(500).json({ message: `Server error: ${error.message}` });
+    }
+};
+  
+  
 
 

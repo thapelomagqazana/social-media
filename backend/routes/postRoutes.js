@@ -9,7 +9,9 @@ import {
     createPost,
     getPosts,
     getPostById,
-    deletePost
+    deletePost,
+    likePost,
+    unlikePost
  } from "../controllers/postController.js";
 import { protect, validateQueryParams } from "../middleware/authMiddleware.js";
 import { postRateLimiter } from "../middleware/rateLimiter.js";
@@ -45,12 +47,19 @@ router.get("/:postId", protect, getPostById);
  */
 router.delete("/:postId", protect, deletePost);
 
-// /**
-//  * @route POST /api/posts/:postId/like
-//  * @description Like the post.
-//  * @access Private (Requires authentication)
-//  */
-// router.delete("/:postId", protect, deletePost);
+/**
+ * @route POST /api/posts/:postId/like
+ * @description Like the post.
+ * @access Private (Requires authentication)
+ */
+router.post("/:postId/like", protect, likePost);
+
+/**
+ * @route POST /api/posts/:postId/unlike
+ * @description Unlike the post.
+ * @access Private (Requires authentication)
+ */
+router.post("/:postId/unlike", protect, unlikePost);
 
 
 export default router;
