@@ -13,6 +13,10 @@ import {
     likePost,
     unlikePost
  } from "../controllers/postController.js";
+import {
+    addComment,
+    deleteComment
+} from "../controllers/commentController.js";
 import { protect, validateQueryParams } from "../middleware/authMiddleware.js";
 import { postRateLimiter } from "../middleware/rateLimiter.js";
 import upload from "../config/multer.js";
@@ -60,6 +64,20 @@ router.post("/:postId/like", protect, likePost);
  * @access Private (Requires authentication)
  */
 router.post("/:postId/unlike", protect, unlikePost);
+
+/**
+ * @route   POST /api/posts/:postId/comment
+ * @desc    Add a comment to a post
+ * @access  Private
+ */
+router.post("/:postId/comment", protect, addComment);
+
+/**
+ * @route   DELETE /api/posts/:postId/comment/:commentId
+ * @desc    Soft delete a comment
+ * @access  Private
+ */
+router.delete("/:postId/comment/:commentId", protect, deleteComment);
 
 
 export default router;

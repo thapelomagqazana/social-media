@@ -243,6 +243,7 @@ export const likePost = async (req, res) => {
         { _id: postId },
         { $addToSet: { likes: userId } } // $addToSet prevents duplicate entries
       );
+      await Post.updateOne({ _id: postId }, { $inc: { likesCount: 1 } });
   
       return res.status(200).json({ message: "Post liked successfully" });
   
@@ -277,13 +278,12 @@ export const unlikePost = async (req, res) => {
       if (!post.likes.includes(userId)) {
         return res.status(200).json({ message: "Post not liked yet" });
       }
-  
       // Atomic update to remove like
       await Post.updateOne(
         { _id: postId },
         { $pull: { likes: userId } } // $pull ensures the user is removed from likes array
       );
-  
+      await Post.updateOne({ _id: postId }, { $inc: { likesCount: -1 } });
       return res.status(200).json({ message: "Post unliked successfully" });
   
     } catch (error) {

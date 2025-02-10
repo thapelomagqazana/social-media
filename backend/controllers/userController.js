@@ -7,6 +7,7 @@
 import User from "../models/User.js";
 import Follower from "../models/Follower.js";
 import Post from "../models/Post.js";
+import Comment from "../models/Comment.js";
 import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import redisClient from "../config/redisClient.js";
@@ -229,7 +230,7 @@ export const deleteUser = async (req, res) => {
     // Cascade delete related data
     await Promise.all([
       Post.deleteMany({ user: userId }),           // Delete user’s posts
-      // Comment.deleteMany({ userId }),        // Delete user’s comments
+      Comment.deleteMany({ user: userId }),        // Delete user’s comments
       Follower.deleteMany({ $or: [{ following: userId }, { follower: userId }] }), // Remove follow relationships
     ]);
 

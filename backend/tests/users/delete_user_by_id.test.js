@@ -11,7 +11,7 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import User from "../../models/User.js";
 import Post from "../../models/Post.js";
-// import Comment from "../../models/Comment.js";
+import Comment from "../../models/Comment.js";
 import Follower from "../../models/Follower.js";
 
 // Load environment variables
@@ -28,7 +28,7 @@ beforeAll(async () => {
   // Clear existing data
   await User.deleteMany({});
   await Post.deleteMany({});
-  // await Comment.deleteMany({});
+  await Comment.deleteMany({});
   await Follower.deleteMany({});
 
   // Create an admin user
@@ -71,11 +71,11 @@ beforeAll(async () => {
     { user: userId, content: "User's second post" },
   ]);
 
-  // // Create comments by user
-  // await Comment.create([
-  //   { content: "User's first comment", user: userId, post: adminId },
-  //   { content: "User's second comment", user: userId, post: adminId },
-  // ]);
+  // Create comments by user
+  await Comment.create([
+    { text: "User's first comment", user: userId, post: adminId },
+    { text: "User's second comment", user: userId, post: adminId },
+  ]);
 
   // Add followers for the user
   await Follower.create([{ follower: adminId, following: userId }]);
@@ -134,8 +134,8 @@ describe("DELETE /api/users/:userId - Delete User", () => {
       role: "user",
     });
 
-    await Post.create([{ content: "Cascade User's post", user: testUser._id }]);
-    // await Comment.create([{ content: "Cascade User's comment", user: testUser._id }]);
+    const postsList = await Post.create([{ content: "Cascade User's post", user: testUser._id }]);
+    await Comment.create([{ text: "Cascade User's comment", user: testUser._id, post: postsList[0]._id }]);
     await Follower.create([{ follower: adminId, following: testUser._id }]);
 
     await request(app)
@@ -143,52 +143,13 @@ describe("DELETE /api/users/:userId - Delete User", () => {
       .set("Authorization", `Bearer ${adminToken}`);
 
     const posts = await Post.find({ user: testUser._id });
-    // const comments = await Comment.find({ user: testUser._id });
+    const comments = await Comment.find({ user: testUser._id });
     const followers = await Follower.find({ following: testUser._id });
 
     expect(posts.length).toBe(0);
-    // expect(comments.length).toBe(0);
+    expect(comments.length).toBe(0);
     expect(followers.length).toBe(0);
   });
-
-  /**
-   * ✅ Deleting a user updates follower counts correctly
-   */
-  it("✅ Should remove deleted user from followers list", async () => {
-    const remainingFollowers = await Follower.find({ following: userId });
-    expect(remainingFollowers.length).toBe(0);
-  });
-
-  // /**
-  //  * ✅ Deleting a user updates post references correctly
-  //  */
-  // it("✅ Should delete all posts by the deleted user", async () => {
-  //   const remainingPosts = await Post.find({ user: userId });
-  //   expect(remainingPosts.length).toBe(0);
-  // });
-
-  // /**
-  //  * ✅ Deleting a user updates comments correctly
-  //  */
-  // it("✅ Should remove all comments by the deleted user", async () => {
-  //   const remainingComments = await Comment.find({ user: userId });
-  //   expect(remainingComments.length).toBe(0);
-  // });
-
-  // /**
-  //  * ✅ Database remains in a consistent state after deletion
-  //  */
-  // it("✅ Should maintain database consistency after deletion", async () => {
-  //   const allUsers = await User.find();
-  //   const allPosts = await Post.find();
-  //   const allComments = await Comment.find();
-  //   const allFollowers = await Follower.find();
-
-  //   expect(allUsers.some(user => user._id.toString() === userId)).toBeFalsy();
-  //   expect(allPosts.some(post => post.user.toString() === userId)).toBeFalsy();
-  //   expect(allComments.some(comment => comment.user.toString() === userId)).toBeFalsy();
-  //   expect(allFollowers.some(follow => follow.following.toString() === userId)).toBeFalsy();
-  // });
 
   /**
    * ❌ Negative Test Cases
@@ -245,33 +206,24 @@ describe("DELETE /api/users/:userId - Delete User", () => {
       expect(response.body).toHaveProperty("message", "Invalid user ID");
     });
   
-    // /**
-    //  * 🔺 Edge Cases
-    //  */
-    // it("✅ Should delete a user with 100,000+ posts, comments, and followers", async () => {
-    //   // Simulate heavy load user
-    //   const heavyUser = await User.create({ name: "Heavy User", email: "heavy@example.com", password: "Heavy@123", role: "user" });
-    //   await Post.insertMany(Array(100000).fill({ content: "Heavy user post", user: heavyUser._id }));
-    //   await request(app).delete(`/api/users/${heavyUser._id}`).set("Authorization", `Bearer ${adminToken}`);
-    //   const remainingPosts = await Post.find({ user: heavyUser._id });
-    //   expect(remainingPosts.length).toBe(0);
-    // });
+    /**
+     * 🔺 Edge Cases
+     */
+    it("✅ Should delete a user who follows many but has no followers", async () => {
+      const noFollowerUser = await User.create({ name: "No Followers", email: "nofollowers@example.com", password: "NoFollow@123", role: "user" });
+      await Follower.create([{ follower: noFollowerUser._id, following: adminId }]);
+      await request(app).delete(`/api/users/${noFollowerUser._id}`).set("Authorization", `Bearer ${adminToken}`);
+      const remainingFollowers = await Follower.find({ follower: noFollowerUser._id });
+      expect(remainingFollowers.length).toBe(0);
+    });
   
-    // it("✅ Should delete a user who follows many but has no followers", async () => {
-    //   const noFollowerUser = await User.create({ name: "No Followers", email: "nofollowers@example.com", password: "NoFollow@123", role: "user" });
-    //   await Follower.create([{ follower: noFollowerUser._id, following: adminId }]);
-    //   await request(app).delete(`/api/users/${noFollowerUser._id}`).set("Authorization", `Bearer ${adminToken}`);
-    //   const remainingFollowers = await Follower.find({ follower: noFollowerUser._id });
-    //   expect(remainingFollowers.length).toBe(0);
-    // });
-  
-    // it("✅ Should delete a user with private posts", async () => {
-    //   const privateUser = await User.create({ name: "Private User", email: "private@example.com", password: "Private@123", role: "user" });
-    //   await Post.create({ content: "Private post", user: privateUser._id, visibility: "private" });
-    //   await request(app).delete(`/api/users/${privateUser._id}`).set("Authorization", `Bearer ${adminToken}`);
-    //   const remainingPosts = await Post.find({ user: privateUser._id });
-    //   expect(remainingPosts.length).toBe(0);
-    // });
+    it("✅ Should delete a user with private posts", async () => {
+      const privateUser = await User.create({ name: "Private User", email: "private@example.com", password: "Private@123", role: "user" });
+      await Post.create({ content: "Private post", user: privateUser._id, visibility: "private" });
+      await request(app).delete(`/api/users/${privateUser._id}`).set("Authorization", `Bearer ${adminToken}`);
+      const remainingPosts = await Post.find({ user: privateUser._id });
+      expect(remainingPosts.length).toBe(0);
+    });
 });
 
 /**
