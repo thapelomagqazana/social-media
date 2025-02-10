@@ -68,6 +68,16 @@ const userSchema = new mongoose.Schema(
       default: 0,
       index: true,
     },
+    postCount: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
+    interests: {
+      type: [String],
+      default: [],
+      index: true, // Indexed for recommendation queries
+    },
     createdAt: {
         type: Date,
         default: Date.now,

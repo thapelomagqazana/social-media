@@ -13,7 +13,8 @@ import {
   getUserFollowers,
   getUserFollowing,
   followUser,
-  unfollowUser
+  unfollowUser,
+  getUserSuggestions
 } from "../controllers/userController.js";
 import { protect, validateQueryParams, authorize } from "../middleware/authMiddleware.js";
 
@@ -74,5 +75,12 @@ router.post("/:userId/follow", protect, followUser);
  * @access Private (Requires authentication)
  */
 router.post("/:userId/unfollow", protect, unfollowUser);
+
+/**
+ * @route GET /api/users/suggestions
+ * @desc Get user suggestions based on common interests
+ * @access Private (Requires authentication)
+ */
+router.get("/suggestions", protect, getUserSuggestions);
 
 export default router;

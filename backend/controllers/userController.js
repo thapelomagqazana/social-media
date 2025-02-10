@@ -6,6 +6,7 @@
 
 import User from "../models/User.js";
 import Follower from "../models/Follower.js";
+import Post from "../models/Post.js";
 import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import redisClient from "../config/redisClient.js";
@@ -228,7 +229,7 @@ export const deleteUser = async (req, res) => {
 
     // Cascade delete related data
     await Promise.all([
-      // Post.deleteMany({ userId }),           // Delete user’s posts
+      Post.deleteMany({ userId }),           // Delete user’s posts
       // Comment.deleteMany({ userId }),        // Delete user’s comments
       Follower.deleteMany({ $or: [{ following: userId }, { follower: userId }] }), // Remove follow relationships
     ]);
@@ -442,3 +443,45 @@ export const unfollowUser = async (req, res) => {
     return res.status(500).json({ message: `Internal server error: ${error.message}` });
   }
 };
+
+/**
+ * @route GET /api/users/suggestions
+ * @desc Get AI-powered user recommendations
+ * @access Private
+ */
+export const getUserSuggestions = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  // Check Redis cache
+  const cachedSuggestions = await redisClient.get(`suggestions:${userId}`);
+  if (cachedSuggestions) {
+    return res.status(200).json({ users: JSON.parse(cachedSuggestions) });
+  }
+
+  // Get user data
+  const user = await User.findById(userId);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  // Fetch all users except the current user and those already followed
+  const users = await User.find({
+    _id: { $ne: userId },
+    _id: { $nin: user.following || [] },
+  });
+
+  // Compute Jaccard similarity score for each user
+  const recommendations = users
+    .map((otherUser) => {
+      const similarityScore = jaccard(user.interests || [], otherUser.interests || []);
+      return { ...otherUser.toObject(), similarityScore };
+    })
+    .sort((a, b) => b.similarityScore - a.similarityScore) // Sort by similarity score
+
+    .slice(0, 10); // Return top 10 recommendations
+
+  // Cache results in Redis
+  await redisClient.setex(`suggestions:${userId}`, 3600, JSON.stringify(recommendations));
+
+  return res.status(200).json({ users: recommendations });
+});

@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "node",
+        "request": "launch",
+        "name": "Jest Debug",
+        "program": "${workspaceRoot}/node_modules/.bin/jest",
+        "args": ["--runInBand", "--watch"],
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen"
+      }
+    ]
+}
+  
