@@ -400,3 +400,45 @@ export const followUser = async (req, res) => {
     res.status(500).json({ message: `Internal Server Error: ${error.message}` });
   }
 };
+
+/**
+ * @function unfollowUser
+ * @description Allows an authenticated user to unfollow another user.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {JSON} Success or error message
+ */
+export const unfollowUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const followerId = req.user._id;
+
+    if (followerId.toString() === userId) {
+      return res.status(400).json({ message: "You cannot unfollow yourself" });
+    }
+
+    // Check if target user exists
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if follow relationship exists (use `exists` to avoid extra lookup)
+    const existingFollow = await Follower.exists({ follower: followerId, following: userId });
+
+    if (!existingFollow) {
+      return res.status(400).json({ message: "You are not following this user" });
+    }
+
+    // Use bulk updates to remove follow entry and decrement counts
+    await Follower.deleteOne({ follower: followerId, following: userId });
+
+    await User.updateOne({ _id: followerId }, { $inc: { followingCount: -1 } });
+    await User.updateOne({ _id: userId }, { $inc: { followerCount: -1 } });
+
+    return res.status(200).json({ message: "Successfully unfollowed user" });
+
+  } catch (error) {
+    return res.status(500).json({ message: `Internal server error: ${error.message}` });
+  }
+};
