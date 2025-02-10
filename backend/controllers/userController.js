@@ -64,7 +64,6 @@ export const getUsers = async (req, res) => {
       totalPages: Math.ceil(totalUsers / limitNumber),
     });
   } catch (error) {
-    // console.error("Error fetching users:", error.message);
     res.status(500).json({ message: `Server error: ${error.message}` });
   }
 };
@@ -229,7 +228,7 @@ export const deleteUser = async (req, res) => {
 
     // Cascade delete related data
     await Promise.all([
-      Post.deleteMany({ userId }),           // Delete user’s posts
+      Post.deleteMany({ user: userId }),           // Delete user’s posts
       // Comment.deleteMany({ userId }),        // Delete user’s comments
       Follower.deleteMany({ $or: [{ following: userId }, { follower: userId }] }), // Remove follow relationships
     ]);

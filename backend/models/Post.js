@@ -28,8 +28,12 @@ const postSchema = new mongoose.Schema(
         message: "Invalid media URL",
       },
     },
-    likes: { type: Number, default: 0 },
-    comments: { type: Number, default: 0 },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    // comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
   },
   { timestamps: true }
 );

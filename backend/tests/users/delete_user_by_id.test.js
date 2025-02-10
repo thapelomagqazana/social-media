@@ -10,7 +10,7 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import User from "../../models/User.js";
-// import Post from "../../models/Post.js";
+import Post from "../../models/Post.js";
 // import Comment from "../../models/Comment.js";
 import Follower from "../../models/Follower.js";
 
@@ -27,9 +27,9 @@ beforeAll(async () => {
 
   // Clear existing data
   await User.deleteMany({});
-  // await Post.deleteMany({});
+  await Post.deleteMany({});
   // await Comment.deleteMany({});
-  // await Follower.deleteMany({});
+  await Follower.deleteMany({});
 
   // Create an admin user
   const adminUser = await User.create({
@@ -65,11 +65,11 @@ beforeAll(async () => {
   userId = regularUser._id.toString();
   anotherUserId = anotherUser._id.toString();
 
-  // // Create posts by user
-  // await Post.create([
-  //   { content: "User's first post", user: userId },
-  //   { content: "User's second post", user: userId },
-  // ]);
+  // Create posts by user
+  await Post.create([
+    { user: userId, content: "User's first post" },
+    { user: userId, content: "User's second post" },
+  ]);
 
   // // Create comments by user
   // await Comment.create([
@@ -134,7 +134,7 @@ describe("DELETE /api/users/:userId - Delete User", () => {
       role: "user",
     });
 
-    // await Post.create([{ content: "Cascade User's post", user: testUser._id }]);
+    await Post.create([{ content: "Cascade User's post", user: testUser._id }]);
     // await Comment.create([{ content: "Cascade User's comment", user: testUser._id }]);
     await Follower.create([{ follower: adminId, following: testUser._id }]);
 
@@ -142,11 +142,11 @@ describe("DELETE /api/users/:userId - Delete User", () => {
       .delete(`/api/users/${testUser._id}`)
       .set("Authorization", `Bearer ${adminToken}`);
 
-    // const posts = await Post.find({ user: testUser._id });
+    const posts = await Post.find({ user: testUser._id });
     // const comments = await Comment.find({ user: testUser._id });
     const followers = await Follower.find({ following: testUser._id });
 
-    // expect(posts.length).toBe(0);
+    expect(posts.length).toBe(0);
     // expect(comments.length).toBe(0);
     expect(followers.length).toBe(0);
   });
