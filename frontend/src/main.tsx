@@ -17,7 +17,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Router>
-          <AuthProvider> {/* ✅ Now inside the Router */}
+          <AuthProvider>
             <App />
           </AuthProvider>
         </Router>

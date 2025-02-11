@@ -2,23 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 🌌 Full-Screen Centered Container */
+/* Full-Screen Centered Glassmorphism Container */
 .splash-screen {
   @apply h-screen w-full flex flex-col items-center justify-center 
-         bg-gradient-to-br from-[#1E1E2E] via-[#2A2A38] to-[#1C1C28] 
-         text-white transition-opacity px-8 text-center;
+         bg-gradient-to-br from-[#121212] via-[#1E1E2E] to-[#121212] 
+         text-white transition-opacity relative;
 }
 
-/* 🚀 Glitch Branding Title */
+/* Massive Glitch Branding Title */
 .glitch-text {
+  font-size: 5rem; /* Extra Large */
   font-weight: bold;
-  position: relative;
   text-transform: uppercase;
-  letter-spacing: 4px;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 
-               0 0 20px rgba(255, 255, 255, 0.3);
-  animation: glitch-skew 1.5s infinite alternate ease-in-out;
-  @apply text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem]; /* BIGGER TEXT */
+  position: relative;
+  animation: glitch-skew 1s infinite alternate;
 }
 
 .glitch-text::before,
@@ -27,24 +24,50 @@
   position: absolute;
   top: 0;
   left: 0;
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
 .glitch-text::before {
   color: #bb86fc;
   transform: translate(-4px, -4px);
   clip-path: inset(10% 0 20% 0);
-  animation: glitch-before 1.5s infinite alternate ease-in-out;
+  animation: glitch-before 1s infinite alternate;
 }
 
 .glitch-text::after {
   color: #00ff7f;
   transform: translate(4px, 4px);
   clip-path: inset(20% 0 10% 0);
-  animation: glitch-after 1.5s infinite alternate ease-in-out;
+  animation: glitch-after 1s infinite alternate;
 }
 
-/* 🌟 Animations */
+/* Extra Large Loading Spinner */
+.loading-spinner {
+  width: 5rem; /* Bigger */
+  height: 5rem; /* Bigger */
+  border-width: 6px;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-top: 2rem;
+}
+
+/* Large Animated Welcome Message */
+.splash-message {
+  @apply text-center text-gray-300 text-lg sm:text-xl md:text-2xl;
+  margin-top: 1rem;
+}
+
+/* Floating Particles */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.7;
+  width: 10px;
+  height: 10px;
+}
+
+/* Animations */
 @keyframes glitch-before {
   0% { clip-path: inset(10% 0 20% 0); transform: translate(-4px, -4px); }
   100% { clip-path: inset(30% 0 10% 0); transform: translate(4px, 4px); }
@@ -60,83 +83,55 @@
   100% { transform: skew(1.5deg); }
 }
 
-/* 📝 Large & Responsive Welcome Message */
-.splash-message {
-  @apply text-gray-300 mt-6 font-semibold text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
-  opacity: 0.9;
-  animation: fadeIn 1.5s ease-in-out;
-}
-
-/* 🔄 Extra Large Loading Spinner (GPU-Optimized) */
-.loading-spinner {
-  width: 6rem;
-  height: 6rem;
-  border: 8px solid rgba(255, 255, 255, 0.2);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-top: 2rem;
-}
-
-/* 🌀 Spinner Animation */
+/* Spinner Animation */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-/* ✨ Floating Particles */
-.particle-container {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
+/* Responsive Adjustments */
 
-.particle {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.7;
-  filter: blur(5px);
-  animation: float 6s infinite alternate ease-in-out;
-}
-
-@keyframes float {
-  0% { transform: translateY(0) translateX(0); opacity: 0.8; }
-  50% { transform: translateY(-15px) translateX(10px); opacity: 1; }
-  100% { transform: translateY(0) translateX(0); opacity: 0.8; }
-}
-
-/* 🔹 Responsive Particle Sizes */
+/* Smartphone View */
 @media (max-width: 640px) {
+  .glitch-text {
+    font-size: 2.8rem; /* Smaller font size */
+  }
+
+  .splash-message {
+    font-size: 1rem; /* Adjusted font size */
+  }
+
+  .loading-spinner {
+    width: 3rem; /* Smaller spinner */
+    height: 3rem;
+    border-width: 4px;
+  }
+
   .particle {
-    width: 6px;
+    width: 6px; /* Smaller particles */
     height: 6px;
   }
 }
 
-@media (min-width: 641px) and (max-width: 1024px) {
+/* Tablet View */
+@media (max-width: 1024px) {
+  .glitch-text {
+    font-size: 4rem; /* Slightly smaller font */
+  }
+
+  .splash-message {
+    font-size: 1.25rem;
+  }
+
+  .loading-spinner {
+    width: 4rem;
+    height: 4rem;
+    border-width: 5px;
+  }
+
   .particle {
     width: 8px;
     height: 8px;
   }
 }
 
-@media (min-width: 1025px) {
-  .particle {
-    width: 10px;
-    height: 10px;
-  }
-}
-
-/* ✨ Background Animation (Optional) */
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.splash-screen {
-  background-size: 400% 400%;
-  animation: gradientShift 12s ease infinite;
-}

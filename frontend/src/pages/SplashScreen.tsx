@@ -1,36 +1,41 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Typography } from "@mui/material";
-import "../styles/SplashScreen.css"; // Import optimized CSS
+import { useNavigate } from "react-router-dom";
+import "../styles/SplashScreen.css"; // Optimized Tailwind & Glassmorphism styles
 
 /**
- * Optimized Splash Screen
- * - Shows a branding screen before navigating to the main app.
- * - Features **massive branding title, glitch effect, fade-out animation, and large spinner**.
- * - **Optimized for high performance** using **GPU-accelerated animations**.
+ * **Optimized Splash Screen**
+ * - **Futuristic UI**: Glassmorphism, glitch effects, animated particles.
+ * - **High-performance animations** using **GPU acceleration**.
+ * - **Minimizes unnecessary re-renders** for better UX.
  */
 const SplashScreen: React.FC = () => {
-  const [username, setUsername] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [fadeOut, setFadeOut] = useState(false);
-
-  useEffect(() => {
+  const username = useMemo(() => {
     const storedUser = localStorage.getItem("neoSocialUser");
-    if (storedUser) {
-      setUsername(JSON.parse(storedUser).name);
-    }
-
-    // Trigger fade-out animation before unmounting
-    setTimeout(() => setFadeOut(true), 2500);
+    return storedUser ? JSON.parse(storedUser).name : null;
   }, []);
 
-  // Memoized username greeting (prevents unnecessary recalculations)
+  // Memoized Welcome Message (avoids recalculations)
   const welcomeMessage = useMemo(
-    () =>
-      username
-        ? `Welcome back, ${username}!`
-        : "Connecting you with the world in a futuristic way!",
+    () => (username ? `Welcome back, ${username}!` : "Connecting you with the world in a futuristic way!"),
     [username]
   );
+
+  // Handles fade-out and navigation efficiently
+  const handleFadeOut = useCallback(() => {
+    setFadeOut(true);
+    setTimeout(() => {
+      navigate(username ? "/dashboard" : "/signin");
+    }, 500); // Smooth transition after fade-out
+  }, [navigate, username]);
+
+  useEffect(() => {
+    const timer = setTimeout(handleFadeOut, 2500);
+    return () => clearTimeout(timer); // Cleanup timer on unmount
+  }, [handleFadeOut]);
 
   return (
     <motion.div
@@ -39,7 +44,7 @@ const SplashScreen: React.FC = () => {
       animate={{ opacity: fadeOut ? 0 : 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Massive Branding Title */}
+      {/* Massive Glitch Branding */}
       <motion.h1
         className="glitch-text text-center tracking-wide"
         initial={{ opacity: 0, y: -30 }}
@@ -61,10 +66,15 @@ const SplashScreen: React.FC = () => {
         {welcomeMessage}
       </Typography>
 
-      {/* Extra Large Loading Spinner */}
-      <div className="loading-spinner" />
+      {/* Extra Large Animated Loading Spinner */}
+      <motion.div
+        className="loading-spinner"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.5 }}
+      />
 
-      {/* Floating Particles for Visual Effect */}
+      {/* Floating Animated Particles */}
       <div className="particle-container">
         <motion.div
           className="particle bg-[#bb86fc]"

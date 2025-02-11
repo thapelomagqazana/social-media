@@ -23,16 +23,17 @@ import {
   Close as CloseIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
-import "../styles/Menu.css"; // Import Tailwind-based styles
+import "../styles/Menu.css"; // Import futuristic styles
 
 // Lazy load Drawer to optimize initial bundle size
 const Drawer = lazy(() => import("@mui/material/Drawer"));
 
 /**
- * **Navigation Menu Component**
- * - Uses a **glassmorphism navbar** with a **responsive hamburger menu**.
- * - Implements **lazy loading** for the drawer (mobile optimization).
- * - Includes **debounced menu toggling** for better performance.
+ * **NeoSocial Navigation Menu**
+ * - **Glassmorphism Navbar** with floating, translucent UI.
+ * - **Lazy loaded Mobile Drawer** for optimized performance.
+ * - **Soft neumorphic buttons** for futuristic effect.
+ * - **Optimized event handling** for smooth state updates.
  */
 const Menu: React.FC = () => {
   const { logout } = useAuth();
@@ -40,7 +41,7 @@ const Menu: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 1024px)"); // Adjusted for tablets & desktops
 
-  // Toggle Mobile Menu
+  // Toggle Mobile Menu with Optimized State Handling
   const toggleMobileMenu = useCallback(() => {
     setMobileOpen((prev) => !prev);
   }, []);
@@ -63,6 +64,7 @@ const Menu: React.FC = () => {
 
   return (
     <>
+      {/* Glassmorphic Navbar */}
       <AppBar position="sticky" className="glass-navbar">
         <Toolbar className="toolbar">
           {/* Brand Logo */}
@@ -70,7 +72,7 @@ const Menu: React.FC = () => {
             🚀 NeoSocial
           </Typography>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Only visible on larger screens */}
           {!isMobile && (
             <Box className="nav-links">
               {navItems.map(({ text, to, onClick }) => (
@@ -79,7 +81,7 @@ const Menu: React.FC = () => {
                   component={to ? Link : "button"}
                   to={to}
                   onClick={onClick}
-                  className="nav-button"
+                  className="nav-button neumorphic-button"
                 >
                   {text}
                 </Button>
@@ -87,7 +89,7 @@ const Menu: React.FC = () => {
             </Box>
           )}
 
-          {/* Mobile Hamburger Menu */}
+          {/* Mobile Hamburger Menu - Appears on small screens */}
           {isMobile && (
             <IconButton edge="end" className="hamburger-menu" onClick={toggleMobileMenu}>
               <MenuIcon fontSize="large" />
@@ -100,7 +102,7 @@ const Menu: React.FC = () => {
       <Suspense fallback={<div className="loading-drawer">Loading menu...</div>}>
         <Drawer anchor="left" open={mobileOpen} onClose={toggleMobileMenu} className="mobile-menu">
           <div className="drawer-header">
-            <IconButton onClick={toggleMobileMenu}>
+            <IconButton onClick={toggleMobileMenu} className="close-menu-button">
               <CloseIcon fontSize="large" />
             </IconButton>
           </div>
@@ -110,7 +112,7 @@ const Menu: React.FC = () => {
               component={to ? Link : "div"}
               to={to}
               onClick={onClick ? () => { toggleMobileMenu(); onClick(); } : toggleMobileMenu}
-              className="drawer-item"
+              className="drawer-item neumorphic-item"
             >
               <ListItemIcon>{icon}</ListItemIcon>
               <ListItemText primary={text} />

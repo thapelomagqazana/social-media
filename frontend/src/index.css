@@ -5,11 +5,46 @@
 /**
  * Global styles for the application.
  */
- body {
+body {
   font-family: "Roboto", sans-serif;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+/* Glassmorphism Styling */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+/* Glowing Buttons */
+.glow-button {
+  background: linear-gradient(145deg, #1e1e2e, #2a2a38);
+  border-radius: 12px;
+  box-shadow: var(--tw-shadow-neumorphism);
+  transition: all 0.3s ease-in-out;
+}
+
+.glow-button:hover {
+  box-shadow: 0px 0px 12px rgba(0, 194, 255, 0.8);
+}
+
+/* Neon Hashtags */
+.glowing-hashtag {
+  color: #00c2ff;
+  text-shadow: 0px 0px 8px #00c2ff, 0px 0px 16px #00c2ff;
+}
+
+/* Chat Bubble */
+.chat-bubble {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 10px 15px;
+  max-width: 70%;
 }
 
 

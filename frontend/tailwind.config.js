@@ -1,31 +1,28 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./src/**/*.{js,jsx,ts,tsx}", // Ensure Tailwind scans your components
-    "./node_modules/@mui/**/*.{js,jsx,ts,tsx}" // Include MUI
-  ],
+  darkMode: "class", // Enables dark mode switching
+  content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        primary: "#1E90FF", // Electric Blue
-        secondary: "#BB86FC", // Cyber Purple
-        accent: "#00FF7F", // Lime Green
-        background: "#121212", // Dark Mode
-        text: "#E0E0E0", // Light Gray for readability
+        primary: "#00C2FF", // Neon Blue
+        secondary: "#BB86FC", // Vibrant Purple
+        background: "#121212", // Dark Mode Background
+        text: "#F5F5F5", // Soft White for Readability
+        card: "#1E1E2E", // Glass UI Cards
       },
       boxShadow: {
-        neo: "0px 4px 30px rgba(30, 144, 255, 0.5)", // Neon glow effect
+        neumorphism: "6px 6px 12px #121212, -6px -6px 12px #2A2A38",
       },
-      animation: {
-        glitch: "glitch 1.5s infinite alternate",
+      fontFamily: {
+        sans: ["Inter", "Poppins", "sans-serif"],
       },
-      keyframes: {
-        glitch: {
-          "0%": { textShadow: "2px 2px 2px #ff00ff" },
-          "50%": { textShadow: "-2px -2px 2px #00ffff" },
-          "100%": { textShadow: "2px 2px 2px #ff00ff" },
-        },
-      },
+    },
+    screens: {
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
     },
   },
   plugins: [],
