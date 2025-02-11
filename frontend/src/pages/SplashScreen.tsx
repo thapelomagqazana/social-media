@@ -1,16 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Typography } from "@mui/material";
-import "../styles/SplashScreen.css"; // Import CSS file
+import "../styles/SplashScreen.css"; // Import optimized CSS
 
 /**
- * 📌 Splash Screen Component
- * - Displays a branding screen before navigating to the main app.
- * - Features a **massive branding title**, glitch animation, fade-out effect, and a **large loading spinner**.
- * - Fully **centered on the screen** with **bigger UI elements**.
- * - Optimized for **smartphone, tablet, and desktop views**.
+ * Optimized Splash Screen
+ * - Shows a branding screen before navigating to the main app.
+ * - Features **massive branding title, glitch effect, fade-out animation, and large spinner**.
+ * - **Optimized for high performance** using **GPU-accelerated animations**.
  */
-const SplashScreen = () => {
+const SplashScreen: React.FC = () => {
   const [username, setUsername] = useState<string | null>(null);
   const [fadeOut, setFadeOut] = useState(false);
 
@@ -20,11 +19,18 @@ const SplashScreen = () => {
       setUsername(JSON.parse(storedUser).name);
     }
 
-    // Start fade-out animation before unmounting
-    setTimeout(() => {
-      setFadeOut(true);
-    }, 2500);
+    // Trigger fade-out animation before unmounting
+    setTimeout(() => setFadeOut(true), 2500);
   }, []);
+
+  // Memoized username greeting (prevents unnecessary recalculations)
+  const welcomeMessage = useMemo(
+    () =>
+      username
+        ? `Welcome back, ${username}!`
+        : "Connecting you with the world in a futuristic way!",
+    [username]
+  );
 
   return (
     <motion.div
@@ -33,7 +39,7 @@ const SplashScreen = () => {
       animate={{ opacity: fadeOut ? 0 : 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* 🚀 Huge Glitch Branding */}
+      {/* Massive Branding Title */}
       <motion.h1
         className="glitch-text text-center tracking-wide"
         initial={{ opacity: 0, y: -30 }}
@@ -43,7 +49,7 @@ const SplashScreen = () => {
         🚀 NEO SOCIAL
       </motion.h1>
 
-      {/* 📝 Large Welcome Message */}
+      {/* Large Welcome Message */}
       <Typography
         variant="h6"
         className="splash-message"
@@ -52,19 +58,14 @@ const SplashScreen = () => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8, duration: 1 }}
       >
-        {username ? `Welcome back, ${username}!` : "Connecting you with the world in a futuristic way!"}
+        {welcomeMessage}
       </Typography>
 
-      {/* 🔄 Extra Large Loading Spinner */}
-      <motion.div
-        className="loading-spinner"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 0.5 }}
-      />
+      {/* Extra Large Loading Spinner */}
+      <div className="loading-spinner" />
 
-      {/* ✨ Bigger Particle Effect (Optional) */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
+      {/* Floating Particles for Visual Effect */}
+      <div className="particle-container">
         <motion.div
           className="particle bg-[#bb86fc]"
           animate={{ y: [0, -200, 200, 0], x: [0, 100, -100, 0] }}

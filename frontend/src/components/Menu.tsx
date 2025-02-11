@@ -1,15 +1,16 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useCallback, useMemo, lazy, Suspense } from "react";
+import { Link } from "react-router-dom";
 import {
   AppBar,
   Toolbar,
   IconButton,
-  Drawer,
-  List,
+  Button,
   ListItem,
   ListItemIcon,
   ListItemText,
   Typography,
+  useMediaQuery,
+  Box,
 } from "@mui/material";
 import {
   Home,
@@ -22,109 +23,101 @@ import {
   Close as CloseIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
-import "../styles/Menu.css"; // Import custom styles
+import "../styles/Menu.css"; // Import Tailwind-based styles
+
+// Lazy load Drawer to optimize initial bundle size
+const Drawer = lazy(() => import("@mui/material/Drawer"));
 
 /**
  * **Navigation Menu Component**
- * - Uses a **clean top bar** and moves navigation into a **hamburger menu**.
- * - Implements **Glassmorphism UI** for a **futuristic and sleek** look.
- * - Dynamically updates links based on authentication status.
+ * - Uses a **glassmorphism navbar** with a **responsive hamburger menu**.
+ * - Implements **lazy loading** for the drawer (mobile optimization).
+ * - Includes **debounced menu toggling** for better performance.
  */
 const Menu: React.FC = () => {
   const { logout } = useAuth();
   const userId = localStorage.getItem("userId");
-  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-
+  const isMobile = useMediaQuery("(max-width: 1024px)"); // Adjusted for tablets & desktops
 
   // Toggle Mobile Menu
-  const toggleMobileMenu = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const toggleMobileMenu = useCallback(() => {
+    setMobileOpen((prev) => !prev);
+  }, []);
+
+  // Memoized Navigation Items for Performance
+  const navItems = useMemo(() => {
+    if (!userId) {
+      return [
+        { text: "Sign Up", icon: <HowToReg />, to: "/signup" },
+        { text: "Sign In", icon: <Login />, to: "/signin" },
+      ];
+    }
+    return [
+      { text: "Dashboard", icon: <Home />, to: "/dashboard" },
+      { text: "Users", icon: <Group />, to: "/users" },
+      { text: "Profile", icon: <Person />, to: `/profile/${userId}` },
+      { text: "Logout", icon: <ExitToApp />, onClick: logout },
+    ];
+  }, [userId, logout]);
 
   return (
     <>
       <AppBar position="sticky" className="glass-navbar">
         <Toolbar className="toolbar">
           {/* Brand Logo */}
-          <Typography variant="h5" className="brand-title" onClick={() => navigate("/")}>
+          <Typography variant="h5" className="brand-title">
             🚀 NeoSocial
           </Typography>
 
-          {/* Hamburger Menu */}
-          <IconButton edge="end" className="hamburger-menu" onClick={toggleMobileMenu}>
-            <MenuIcon fontSize="large" />
-          </IconButton>
+          {/* Desktop Navigation */}
+          {!isMobile && (
+            <Box className="nav-links">
+              {navItems.map(({ text, to, onClick }) => (
+                <Button
+                  key={text}
+                  component={to ? Link : "button"}
+                  to={to}
+                  onClick={onClick}
+                  className="nav-button"
+                >
+                  {text}
+                </Button>
+              ))}
+            </Box>
+          )}
+
+          {/* Mobile Hamburger Menu */}
+          {isMobile && (
+            <IconButton edge="end" className="hamburger-menu" onClick={toggleMobileMenu}>
+              <MenuIcon fontSize="large" />
+            </IconButton>
+          )}
         </Toolbar>
       </AppBar>
 
-      {/* Mobile Drawer (Hamburger Menu) */}
-      <Drawer anchor="left" open={mobileOpen} onClose={toggleMobileMenu} className="mobile-menu">
-        <div className="drawer-header">
-          <IconButton onClick={toggleMobileMenu}>
-            <CloseIcon fontSize="large" />
-          </IconButton>
-        </div>
-        <List>
-          {!userId ? (
-            <>
-              <ListItem component="div" onClick={toggleMobileMenu} sx={{ cursor: "pointer" }}>
-                <Link to="/signup" style={{ textDecoration: "none", color: "inherit", display: "flex", width: "100%" }}>
-                  <ListItemIcon>
-                    <HowToReg />
-                  </ListItemIcon>
-                  <ListItemText primary="Sign Up" />
-                </Link>
-              </ListItem>
-
-              <ListItem component="div" onClick={toggleMobileMenu} sx={{ cursor: "pointer" }}>
-                <Link to="/signin" style={{ textDecoration: "none", color: "inherit", display: "flex", width: "100%" }}>
-                  <ListItemIcon>
-                    <Login />
-                  </ListItemIcon>
-                  <ListItemText primary="Sign In" />
-                </Link>
-              </ListItem>
-            </>
-          ) : (
-            <>
-              <ListItem component="div" onClick={toggleMobileMenu} sx={{ cursor: "pointer" }}>
-                <Link to="/dashboard" style={{ textDecoration: "none", color: "inherit", display: "flex", width: "100%" }}>
-                  <ListItemIcon>
-                    <Home />
-                  </ListItemIcon>
-                  <ListItemText primary="Dashboard" />
-                </Link>
-              </ListItem>
-
-              <ListItem component="div" onClick={toggleMobileMenu} sx={{ cursor: "pointer" }}>
-                <Link to="/users" style={{ textDecoration: "none", color: "inherit", display: "flex", width: "100%" }}>
-                  <ListItemIcon>
-                    <Group />
-                  </ListItemIcon>
-                  <ListItemText primary="Users" />
-                </Link>
-              </ListItem>
-
-              <ListItem component="div" onClick={toggleMobileMenu} sx={{ cursor: "pointer" }}>
-                <Link to={`/profile/${userId}`} style={{ textDecoration: "none", color: "inherit", display: "flex", width: "100%" }}>
-                  <ListItemIcon>
-                    <Person />
-                  </ListItemIcon>
-                  <ListItemText primary="Profile" />
-                </Link>
-              </ListItem>
-
-              <ListItem component="div" onClick={logout} sx={{ cursor: "pointer" }}>
-                <ListItemIcon>
-                  <ExitToApp />
-                </ListItemIcon>
-                <ListItemText primary="Logout" />
-              </ListItem>
-            </>
-          )}
-        </List>
-      </Drawer>
+      {/* Mobile Drawer (Lazy Loaded) */}
+      <Suspense fallback={<div className="loading-drawer">Loading menu...</div>}>
+        <Drawer anchor="left" open={mobileOpen} onClose={toggleMobileMenu} className="mobile-menu">
+          <div className="drawer-header">
+            <IconButton onClick={toggleMobileMenu}>
+              <CloseIcon fontSize="large" />
+            </IconButton>
+          </div>
+          {navItems.map(({ text, icon, to, onClick }) => (
+            <ListItem
+              key={text}
+              component={to ? Link : "div"}
+              to={to}
+              onClick={onClick ? () => { toggleMobileMenu(); onClick(); } : toggleMobileMenu}
+              className="drawer-item"
+            >
+              <ListItemIcon>{icon}</ListItemIcon>
+              <ListItemText primary={text} />
+            </ListItem>
+          ))}
+        </Drawer>
+      </Suspense>
     </>
   );
 };

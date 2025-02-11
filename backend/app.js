@@ -14,6 +14,7 @@ import morgan from "morgan"; // HTTP request logger middleware
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -29,26 +30,27 @@ app.use(cookieParser()); // Parse and handle cookies
 app.use(compression()); // Compress response bodies
 app.use(helmet()); // Secure app with HTTP headers
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true })); // Allow frontend requests
-// app.use((req, res, next) => {
-//     console.log("👉 Incoming Request:", req.method, req.url);
-//     console.log("📥 Request Body:", req.body);
-//     console.log("📥 Request Headers:", req.headers);
+app.use((req, res, next) => {
+    console.log("👉 Incoming Request:", req.method, req.url);
+    console.log("📥 Request Body:", req.body);
+    console.log("📥 Request Headers:", req.headers);
   
-//     const oldSend = res.send;
-//     res.send = function (data) {
-//       console.log("📤 Response Status:", res.statusCode);
-//       console.log("📤 Response Body:", data);
-//       oldSend.apply(res, arguments);
-//     };
+    const oldSend = res.send;
+    res.send = function (data) {
+      console.log("📤 Response Status:", res.statusCode);
+      console.log("📤 Response Body:", data);
+      oldSend.apply(res, arguments);
+    };
   
-//     next();
-// });
+    next();
+});
   
 
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/messages", messageRoutes);
 
 // Default route
 app.get("/", (req, res) => res.send("MERN Skeleton API Running"));
