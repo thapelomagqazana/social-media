@@ -6,6 +6,7 @@
 import mongoose from "mongoose";
 import Comment from "../models/Comment.js";
 import Post from "../models/Post.js";
+import redisClient from "../config/redisClient.js";
 
 /**
  * @function addComment
@@ -104,5 +105,80 @@ export const deleteComment = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ message: `Internal server error: ${error.message}` });
   }
+};
+
+/**
+ * @function getTrendingPosts
+ * @description Retrieves trending posts based on engagement.
+ * @route GET /api/posts/trending
+ * @access Public
+ */
+export const getTrendingPosts = async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit) || 10;
+  
+      // Cache key for trending posts
+      const cacheKey = `trending:limit=${limit}`;
+  
+      // Check Redis cache
+      const cachedData = await redisClient.get(cacheKey);
+      if (cachedData) {
+        return res.status(200).json(JSON.parse(cachedData));
+      }
+  
+      // Engagement Score Formula
+      // score = (likesCount * 3) + (commentCount * 2) + (newer posts get a higher boost)
+      const trendingPosts = await Post.aggregate([
+        {
+          $match: { deleted: { $ne: true } }, // Exclude soft-deleted posts
+        },
+        {
+          $addFields: {
+            engagementScore: {
+              $add: [
+                { $multiply: ["$likesCount", 3] }, // Likes have highest weight
+                { $multiply: ["$commentCount", 2] }, // Comments have medium weight
+                {
+                  $divide: [
+                    { $subtract: [new Date(), "$createdAt"] },
+                    -1000 * 60 * 60 * 24, // Normalize age of the post (negative for recency boost)
+                  ],
+                },
+              ],
+            },
+          },
+        },
+        { $sort: { engagementScore: -1 } }, // Sort by highest score
+        { $limit: limit },
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "user",
+          },
+        },
+        { $unwind: "$user" },
+        {
+          $project: {
+            _id: 1,
+            content: 1,
+            media: 1,
+            likesCount: 1,
+            commentCount: 1,
+            createdAt: 1,
+            engagementScore: 1,
+            user: { _id: 1, name: 1, avatar: 1 },
+          },
+        },
+      ]);
+  
+      // Cache result for 5 minutes
+      await redisClient.setex(cacheKey, 300, JSON.stringify(trendingPosts));
+  
+      return res.status(200).json(trendingPosts);
+    } catch (error) {
+      return res.status(500).json({ message: `Internal server error: ${error.message}` });
+    }
 };
 

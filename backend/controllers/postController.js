@@ -290,7 +290,57 @@ export const unlikePost = async (req, res) => {
       return res.status(500).json({ message: `Server error: ${error.message}` });
     }
 };
-  
+
+/**
+ * @function getPostsByHashtag
+ * @description Retrieves all posts containing a specific hashtag.
+ * @param {Object} req - Express request object (includes hashtag param).
+ * @param {Object} res - Express response object.
+ * @returns {Object} JSON response containing an array of posts.
+ */
+export const getPostsByHashtag = async (req, res) => {
+  try {
+    let { tag } = req.params;
+
+    if (!tag || typeof tag !== "string" || tag.length < 2) {
+      return res.status(400).json({ message: "Invalid hashtag" });
+    }
+
+    // Ensure hashtag is lowercase for consistency
+    tag = tag.toLowerCase();
+
+    // Allow Unicode letters, numbers, underscores, and emojis in hashtags
+    if (!/^#[\p{L}\p{N}_\p{Emoji}]+$/u.test(`#${tag}`)) {
+      return res.status(400).json({ message: "Invalid hashtag format" });
+    }
+
+    // Prevent overly long hashtags
+    if (tag.length > 255) {
+      return res.status(400).json({ message: "Hashtag is too long" });
+    }
+
+    // Check if the database is connected before querying
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(500).json({ message: "Database connection lost" });
+    }
+
+    // Fetch posts containing the hashtag (Optimized with index)
+    const posts = await Post.find({ hashtags: tag })
+      .populate("user", "name avatar") // Populate user details
+      .sort({ createdAt: -1 }) // Return latest posts first
+      .limit(50); // Limit results to 50 posts for efficiency
+
+    if (posts.length === 0) {
+      return res.status(404).json({ message: "No posts found with this hashtag" });
+    }
+
+    res.status(200).json(posts);
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+
   
 
 

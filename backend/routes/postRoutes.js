@@ -11,11 +11,13 @@ import {
     getPostById,
     deletePost,
     likePost,
-    unlikePost
+    unlikePost,
+    getPostsByHashtag
  } from "../controllers/postController.js";
 import {
     addComment,
-    deleteComment
+    deleteComment,
+    getTrendingPosts
 } from "../controllers/commentController.js";
 import { protect, validateQueryParams } from "../middleware/authMiddleware.js";
 import { postRateLimiter } from "../middleware/rateLimiter.js";
@@ -78,6 +80,20 @@ router.post("/:postId/comment", protect, addComment);
  * @access  Private
  */
 router.delete("/:postId/comment/:commentId", protect, deleteComment);
+
+/**
+ * @route   GET /api/posts/trending
+ * @desc    Get trending posts with engagements
+ * @access  Public
+ */
+router.get("/trending", protect, validateQueryParams, getTrendingPosts);
+
+/**
+ * @route GET /api/posts/hashtag/:tag
+ * @description Fetch all posts containing a specific hashtag.
+ * @access Public
+ */
+router.get("/hashtag/:tag", getPostsByHashtag);
 
 
 export default router;

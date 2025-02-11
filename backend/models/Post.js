@@ -19,6 +19,10 @@ const postSchema = new mongoose.Schema(
       trim: true,
       maxlength: [1000, "Post content cannot exceed 1000 characters"],
     },
+    hashtags: {
+        type: [String], // Array of hashtags
+        index: true, // Create an index for faster lookups
+    },
     media: {
       type: String,
       validate: {
@@ -44,5 +48,19 @@ const postSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+/**
+ * Ensure hashtags are always stored in lowercase.
+ * This prevents duplicate entries (e.g., #Tech and #tech are treated the same).
+ */
+postSchema.pre("save", function (next) {
+    if (this.hashtags && this.hashtags.length > 0) {
+      this.hashtags = this.hashtags.map((tag) => tag.toLowerCase());
+    }
+    next();
+});
+  
+// Create a MongoDB index on the hashtags field for **fast lookups**
+postSchema.index({ hashtags: 1 });
 
 export default mongoose.model("Post", postSchema);
