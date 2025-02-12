@@ -19,14 +19,15 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { Visibility, VisibilityOff, Google, Facebook, Person } from "@mui/icons-material";
+import { motion } from "framer-motion";
 import "../styles/Auth.css";
 
 /**
- * **Sign-In Page Component**
- * - Allows users to log in with **email/password** or **OAuth**.
- * - Implements form validation using **React Hook Form** and **Yup**.
- * - Integrates with **backend authentication API**.
- * - Features a sleek **Glassmorphism UI** with **responsive design**.
+ * **Sign-In Page**
+ * - Users can log in using email/password or OAuth.
+ * - Implements form validation with **React Hook Form & Yup**.
+ * - Features **Glassmorphism UI** with **responsive design**.
+ * - **Smooth animations** for a futuristic experience.
  */
 
 // Form Validation Schema
@@ -43,12 +44,11 @@ interface SignInFormInputs {
 
 /**
  * **Sign-In Component**
- * - Provides a **login form** for users.
- * - Implements **validation, error handling, and success feedback**.
- * - Supports **OAuth login (Google & Facebook)**.
+ * - Floating input labels with modern UI.
+ * - Animated buttons for smooth interactions.
+ * - OAuth login support (Google & Facebook).
  */
 const SignInPage: React.FC = () => {
-  // Initialize form handling with validation
   const {
     handleSubmit,
     control,
@@ -69,27 +69,33 @@ const SignInPage: React.FC = () => {
     severity: "success",
   });
 
+  console.log(localStorage.getItem("token"));
+  console.log(localStorage.getItem("userId"));
+
   /**
    * Handles form submission.
    * - Sends login data to the backend.
-   * - Displays success/error messages via a Snackbar.
-   * - Redirects users to the dashboard upon successful login.
+   * - Displays success/error messages via Snackbar.
+   * - Redirects users to the dashboard after successful login.
    */
   const onSubmit = async (data: SignInFormInputs) => {
     setLoading(true);
     try {
       const response = await loginUser(data);
       authUser(response);
-       // Store token and user data in Auth Context
+      console.log(localStorage.getItem("token"));
+      console.log(localStorage.getItem("userId"));
+ 
+
       setSnackbar({ open: true, message: "Login successful", severity: "success" });
 
       // Reset form and redirect after success
       reset();
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setTimeout(() => navigate("/home"), 2000);
     } catch (error: unknown) {
       if (error instanceof Error && "response" in error) {
-        const axiosError = error as { response?: { data?: { message?: string } } };  // Proper type assertion
-        setSnackbar({ open: true, message: axiosError.response?.data?.message || "Signup failed", severity: "error" });
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        setSnackbar({ open: true, message: axiosError.response?.data?.message || "Login failed", severity: "error" });
       } else {
         setSnackbar({ open: true, message: "An unexpected error occurred", severity: "error" });
       }
@@ -103,9 +109,14 @@ const SignInPage: React.FC = () => {
       {/* Glassmorphism UI Container */}
       <Paper className="auth-container">
         {/* Avatar Placeholder */}
-        <div className="avatar-container">
+        <motion.div
+          className="avatar-container"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           <Person fontSize="large" />
-        </div>
+        </motion.div>
 
         <Typography variant="h4" align="center" gutterBottom>
           Sign In
@@ -155,36 +166,57 @@ const SignInPage: React.FC = () => {
             )}
           />
 
-          {/* "Remember Me" Checkbox */}
-          <FormControlLabel
-            control={<Checkbox checked={rememberMe} onChange={() => setRememberMe(!rememberMe)} />}
-            label="Remember Me"
-          />
+          {/* "Remember Me" Checkbox & Forgot Password */}
+          <div className="flex justify-between items-center forgot-password-container">
+            <FormControlLabel
+              control={<Checkbox checked={rememberMe} onChange={() => setRememberMe(!rememberMe)} />}
+              label="Remember Me"
+            />
+            <Typography variant="body2" className="forgot-password">
+              <Link to="/forgot-password">Forgot Password?</Link>
+            </Typography>
+          </div>
 
-          {/* Forgot Password Link */}
-          <Typography variant="body2" align="right" className="mt-2">
-            <Link to="/forgot-password">Forgot Password?</Link>
-          </Typography>
+          <motion.div whileHover={{ scale: 1.05 }}>
+            <Button 
+              type="submit" 
+              variant="contained" 
+              color="primary" 
+              fullWidth 
+              className="submit-button mt-4" 
+              disabled={loading}
+              sx={{
+                color: "white",
+              }}
+              >
+              {loading ? <CircularProgress size={24} /> : "Sign In"}
+            </Button>
+          </motion.div>
+
+          {/* OR Separator */}
+          <div className="or-separator">—————OR ——————</div>
 
           {/* OAuth Login Options */}
           <div className="oauth-container">
-            <Button variant="contained" color="error" startIcon={<Google />}>
-              Google
+            <Button variant="contained" color="error" startIcon={<Google />} fullWidth>
+              Sign in with Google
             </Button>
-            <Button variant="contained" color="primary" startIcon={<Facebook />}>
-              Facebook
+            <Button 
+              variant="contained" 
+              color="primary" 
+              startIcon={<Facebook />} 
+              fullWidth
+              sx={{
+                color: "white",
+              }}
+            >
+              Sign in with Facebook
             </Button>
           </div>
 
-          {/* Submit Button */}
-          <Button type="submit" variant="contained" color="primary" fullWidth className="submit-button mt-4" disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : "Sign In"}
-          </Button>
-
-
           {/* Redirect to Sign-Up */}
           <Typography variant="body2" className="sign-up-redirect">
-            Don't have an account? <Link to="/signup">Sign up</Link>
+            Don't have an account? <Link to="/signup">Create Account</Link>
           </Typography>
 
         </form>

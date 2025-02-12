@@ -2,90 +2,114 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Glassmorphism Container */
+/* Glassmorphic Authentication Container */
 .auth-container {
-  @apply bg-opacity-90 backdrop-blur-lg shadow-lg;
-  background: rgba(18, 18, 18, 0.7);
-  border-radius: 15px;
-  padding: 2.5rem;
-  text-align: center;
-  margin-top: 40px;
+  @apply bg-opacity-90 backdrop-blur-lg shadow-lg p-8 text-center;
+  background: rgba(18, 18, 18, 0.75);
+  border-radius: 12px;
+  max-width: 500px;
+  margin: 3rem auto;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
+  padding: 50px;
 }
 
-/* OAuth Buttons Container */
+/* Avatar Container */
+.avatar-container {
+  @apply w-16 h-16 mx-auto flex items-center justify-center mb-4;
+  text-align: center;
+}
+
+/* Input Fields - Floating Labels */
+.MuiTextField-root {
+  @apply bg-transparent text-white;
+}
+
+.MuiInputBase-root {
+  @apply text-gray-200;
+}
+
+/* 🛠 Form Elements */
+.submit-button {
+  @apply bg-blue-500 text-white font-bold py-2 px-4 rounded-lg w-full transition-all;
+}
+
+.submit-button:hover {
+  @apply bg-blue-600;
+}
+
+/* Checkbox & Forgot Password */
+.flex {
+  @apply flex justify-between items-center mt-3;
+  text-align: center;
+}
+
+/* OR Separator */
+.or-separator {
+  @apply text-center text-gray-400 my-4 text-sm;
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* OAuth Login Buttons */
 .oauth-container {
-    @apply flex justify-center gap-4 mt-6;
-    margin-bottom: 10px;
+  @apply flex flex-col space-y-3 mt-4;
 }
 
 .oauth-container button {
-    margin: auto 10px;
-}
-
-/* Standard Button Styling */
-.oauth-container button,
-.submit-button {
-    @apply w-full py-2 rounded-lg text-white transition-transform duration-200 ease-in-out;
-}
-
-/* Hover Effect */
-.oauth-container button:hover,
-.submit-button:hover {
-    transform: scale(1.05);
+  @apply text-white font-semibold py-2 px-4 rounded-lg transition-all;
+  margin-bottom: 10px;
 }
 
 .oauth-container button:hover {
-  transform: scale(1.05);
+  @apply transform scale-105;
 }
 
-/* Form Fields */
-input {
-  @apply bg-transparent border border-gray-500 text-white focus:ring focus:ring-blue-500;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .auth-container {
-    padding: 2rem;
-  }
-
-  .avatar-container {
-    width: 5rem;
-    height: 5rem;
-  }
-
-  .oauth-container {
-    @apply flex flex-col gap-3; /* Stack buttons vertically with spacing */
-  }
-
- .oauth-container button {
-    @apply w-full;
-    margin-bottom: 10px;
- }
-}
-
-/* Button Effects */
-button {
-  @apply bg-blue-600 text-white py-2 px-4 rounded-md transition duration-300 ease-in-out;
-}
-
-button:hover {
-  background: linear-gradient(45deg, #00ff7f, #bb86fc);
-  box-shadow: 0px 0px 10px rgba(0, 255, 127, 0.6);
-}
-
-/* Sign-Up Redirect Styling */
+/* Sign-Up Redirect */
 .sign-up-redirect {
-    @apply mt-6 text-center text-gray-400 text-sm;
+  @apply text-center text-gray-300 mt-6;
+  text-align: center;
 }
 
 .sign-up-redirect a {
-    @apply text-blue-500 font-semibold transition-colors duration-200 ease-in-out;
+  color: rgba(0, 194, 255);
 }
 
-/* Hover Effect */
-.sign-up-redirect a:hover {
-    @apply text-blue-300 underline;
+/* 🚀 Animations */
+@keyframes glitch {
+  0% {
+    text-shadow: 2px 2px 8px rgba(0, 194, 255, 0.8);
+  }
+  50% {
+    text-shadow: -2px -2px 12px rgba(187, 134, 252, 0.8);
+  }
+  100% {
+    text-shadow: 2px 2px 8px rgba(0, 194, 255, 0.8);
+  }
 }
 
+.glitch-text {
+  animation: glitch 1.5s infinite alternate;
+}
 
+.forgot-password-container {
+  margin-bottom: 10px;
+}
+
+.forgot-password a {
+  color: rgba(0, 194, 255);
+}
+
+/* 🔹 Responsive Design */
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 1rem;
+    width: 90%;
+  }
+}

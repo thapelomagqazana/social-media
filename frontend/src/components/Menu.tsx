@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, lazy, Suspense } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   AppBar,
   Toolbar,
@@ -10,10 +10,16 @@ import {
   ListItemText,
   Typography,
   useMediaQuery,
+  Badge,
   Box,
+  Avatar,
+  Menu as MuiMenu,
+  MenuItem,
 } from "@mui/material";
 import {
   Home,
+  Notifications,
+  Chat,
   ExitToApp,
   Person,
   Group,
@@ -21,30 +27,42 @@ import {
   HowToReg,
   Menu as MenuIcon,
   Close as CloseIcon,
+  AccountCircle,
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Menu.css"; // Import futuristic styles
 
-// Lazy load Drawer to optimize initial bundle size
+// Lazy load Drawer for performance optimization
 const Drawer = lazy(() => import("@mui/material/Drawer"));
 
 /**
- * **NeoSocial Navigation Menu**
- * - **Glassmorphism Navbar** with floating, translucent UI.
- * - **Lazy loaded Mobile Drawer** for optimized performance.
- * - **Soft neumorphic buttons** for futuristic effect.
- * - **Optimized event handling** for smooth state updates.
+ * @component Menu
+ * @description NeoSocial Navigation Menu with Glassmorphism UI.
+ * - **Unified Navbar & Mobile Drawer** for seamless experience.
+ * - **Lazy Loaded Drawer** to reduce initial bundle size.
+ * - **Interactive notifications** for messages & alerts.
+ * - **Smooth animations with Neumorphic effects**.
  */
 const Menu: React.FC = () => {
   const { logout } = useAuth();
   const userId = localStorage.getItem("userId");
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isMobile = useMediaQuery("(max-width: 1024px)"); // Adjusted for tablets & desktops
 
-  // Toggle Mobile Menu with Optimized State Handling
+  // Toggle Mobile Drawer
   const toggleMobileMenu = useCallback(() => {
     setMobileOpen((prev) => !prev);
   }, []);
+
+  // Open/Close Profile Dropdown
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   // Memoized Navigation Items for Performance
   const navItems = useMemo(() => {
@@ -55,27 +73,36 @@ const Menu: React.FC = () => {
       ];
     }
     return [
-      { text: "Dashboard", icon: <Home />, to: "/dashboard" },
+      { text: "Home", icon: <Home />, to: "/home" },
+      { text: "Messages", icon: <Badge badgeContent={3} color="primary"><Chat /></Badge>, to: "/messages" },
+      { text: "Notifications", icon: <Badge badgeContent={5} color="secondary"><Notifications /></Badge>, to: "/notifications" },
       { text: "Users", icon: <Group />, to: "/users" },
       { text: "Profile", icon: <Person />, to: `/profile/${userId}` },
-      { text: "Logout", icon: <ExitToApp />, onClick: logout },
+      { text: "Logout", icon: <ExitToApp />, onClick: () => { logout(); } },
     ];
   }, [userId, logout]);
 
   return (
     <>
-      {/* Glassmorphic Navbar */}
+      {/* 🚀 Glassmorphic Navbar */}
       <AppBar position="sticky" className="glass-navbar">
         <Toolbar className="toolbar">
-          {/* Brand Logo */}
-          <Typography variant="h5" className="brand-title">
+          {/* Mobile Hamburger Menu */}
+          {isMobile && (
+            <IconButton edge="start" className="hamburger-menu" onClick={toggleMobileMenu}>
+              <MenuIcon fontSize="large" />
+            </IconButton>
+          )}
+
+          {/* Brand Name */}
+          <Typography variant="h5" className="brand-title" onClick={() => userId ? navigate("/home") : navigate("/signin")}>
             🚀 NeoSocial
           </Typography>
 
-          {/* Desktop Navigation - Only visible on larger screens */}
+          {/* Desktop Navigation */}
           {!isMobile && (
             <Box className="nav-links">
-              {navItems.map(({ text, to, onClick }) => (
+              {navItems.map(({ text, to, onClick, icon }) => (
                 <Button
                   key={text}
                   component={to ? Link : "button"}
@@ -83,22 +110,32 @@ const Menu: React.FC = () => {
                   onClick={onClick}
                   className="nav-button neumorphic-button"
                 >
-                  {text}
+                  {icon} {text}
                 </Button>
               ))}
             </Box>
           )}
 
-          {/* Mobile Hamburger Menu - Appears on small screens */}
-          {isMobile && (
-            <IconButton edge="end" className="hamburger-menu" onClick={toggleMobileMenu}>
-              <MenuIcon fontSize="large" />
-            </IconButton>
+          {/* Profile Dropdown */}
+          {userId && (
+            <>
+              <IconButton color="inherit" onClick={handleMenuClick}>
+                <Avatar className="profile-avatar" />
+              </IconButton>
+              <MuiMenu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+                <MenuItem component={Link} to={`/profile/${userId}`} onClick={handleMenuClose}>
+                  <AccountCircle /> Profile
+                </MenuItem>
+                <MenuItem onClick={() => { logout(); navigate("/signin"); }}>
+                  <ExitToApp /> Logout
+                </MenuItem>
+              </MuiMenu>
+            </>
           )}
         </Toolbar>
       </AppBar>
 
-      {/* Mobile Drawer (Lazy Loaded) */}
+      {/* Mobile Drawer Menu */}
       <Suspense fallback={<div className="loading-drawer">Loading menu...</div>}>
         <Drawer anchor="left" open={mobileOpen} onClose={toggleMobileMenu} className="mobile-menu">
           <div className="drawer-header">

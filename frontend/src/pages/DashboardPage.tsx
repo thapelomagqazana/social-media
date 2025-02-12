@@ -35,6 +35,8 @@ const DashboardPage: React.FC = () => {
     enabled: Boolean(userId), // Prevent API call if userId is missing
   });
 
+  // console.log(user);
+
   return (
     <Container maxWidth="md">
       <Paper elevation={3} sx={{ padding: 4, marginTop: 6, textAlign: "center" }}>

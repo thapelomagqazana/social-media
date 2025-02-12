@@ -1,5 +1,6 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 /**
  * PrivateRoute Component
@@ -7,9 +8,10 @@ import { Navigate, Outlet } from "react-router-dom";
  * - Otherwise, renders the requested route
  */
 const PrivateRoute: React.FC = () => {
-  const token = localStorage.getItem("token");
+  const { isAuthenticated } = useAuth(); // Use Auth Context instead of localStorage
+  console.log(isAuthenticated);
 
-  return token ? <Outlet /> : <Navigate to="/signin" replace />;
+  return isAuthenticated ? <Outlet /> : <Navigate to="/signin" replace />;
 };
 
 export default PrivateRoute;

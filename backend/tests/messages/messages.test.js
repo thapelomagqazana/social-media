@@ -1,14 +1,18 @@
 import request from "supertest";
 import app from "../../app.js";
 import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
 import User from "../../models/User.js";
 import Message from "../../models/Message.js";
 import jwt from "jsonwebtoken";
 
 let user1, user2, authToken, authToken2;
+let mongoServer;
 
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI);
+  // Setup MongoDB Memory Server
+  mongoServer = await MongoMemoryServer.create();
+  await mongoose.connect(mongoServer.getUri(), {});
   await User.deleteMany({});
   await Message.deleteMany({});
 
@@ -146,4 +150,5 @@ describe("GET /api/messages", () => {
 
 afterAll(async () => {
   await mongoose.connection.close();
+  await mongoServer.stop();
 });

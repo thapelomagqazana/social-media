@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 import http from "http"; // Import HTTP module to wrap Express
 import app from "./app.js";
 import connectDB from "./config/db.js";
-import { initializeSocketServer } from "./ws/messages.js";
+import { initializeSocketServer } from "./ws/socket.js";
 
 // Load environment variables
 dotenv.config();

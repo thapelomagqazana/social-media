@@ -1,10 +1,11 @@
 /**
  * @fileoverview WebSocket Implementation for Real-time Messaging
- * @module ws/messages
+ * @module ws/socket
  */
 
 import { Server } from "socket.io";
 import Message from "../models/Message";
+import Post from "../models/Post";
 
 const onlineUsers = new Map(); // Store online users
 
@@ -35,6 +36,19 @@ export const initializeSocketServer = (server) => {
         io.to(onlineUsers.get(receiver)).emit("newMessage", message);
       }
     });
+
+    // Notify users of new posts
+    socket.on("newPost", async (post) => {
+        const savedPost = await Post.findById(post._id).populate("user", "name avatar");
+        io.emit("postUpdate", savedPost);
+    });
+
+    // Notify users of like/comment changes
+    socket.on("updatePost", async (postId) => {
+        const updatedPost = await Post.findById(postId);
+        io.emit("postUpdate", updatedPost);
+    });
+
 
     // Handle disconnection
     socket.on("disconnect", () => {

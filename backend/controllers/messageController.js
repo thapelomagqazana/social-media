@@ -6,7 +6,7 @@
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 import mongoose from "mongoose";
-import { io } from "../ws/messages.js"; // Import WebSocket instance
+import { io } from "../ws/socket.js"; // Import WebSocket instance
 
 /**
  * @function sendMessage

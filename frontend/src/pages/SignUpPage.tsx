@@ -21,11 +21,10 @@ import { Visibility, VisibilityOff, Google, Facebook, Person } from "@mui/icons-
 import "../styles/Auth.css"; // Tailwind-based styles
 
 /**
- * 📌 **Sign-Up Page Component**
- * - Allows users to **create an account** with **email/password** or **OAuth login**.
- * - Uses **React Hook Form** for validation and **Yup** for schema enforcement.
- * - Features a **modern, minimalistic Glassmorphism UI**.
- * - Fully **responsive** for **smartphone, tablet, and desktop**.
+ * 📌 **Sign-Up Page**
+ * - Implements **email/password registration** with **OAuth options**.
+ * - Uses **React Hook Form & Yup** for validation.
+ * - Modern **Glassmorphism UI** with full **responsiveness**.
  */
 
 // 📜 Form Validation Schema
@@ -40,6 +39,10 @@ const signUpSchema = yup.object({
     .matches(/[a-z]/, "Must include a lowercase letter")
     .matches(/[0-9]/, "Must include a number")
     .matches(/[@$!%*?&]/, "Must include a special character"),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref("password")], "Passwords must match")
+    .required("Confirm Password is required"),
 });
 
 // 📜 Type for Form Data
@@ -47,13 +50,9 @@ interface SignUpFormInputs {
   name: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
-/**
- * 🚀 **Sign-Up Component**
- * - Implements **form validation, error handling, and success feedback**.
- * - Supports **OAuth login (Google & Facebook)**.
- */
 const SignUpPage: React.FC = () => {
   const {
     handleSubmit,
@@ -67,6 +66,7 @@ const SignUpPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
     open: false,
@@ -75,25 +75,23 @@ const SignUpPage: React.FC = () => {
   });
 
   /**
-   * Handles form submission and sends data to the backend API.
+   * Handles form submission.
    */
   const onSubmit = async (data: SignUpFormInputs) => {
     setLoading(true);
     try {
-      const response = await registerUser(data); // Using the abstracted API function
+      const response = await registerUser(data); 
       setSnackbar({ open: true, message: response.message, severity: "success" });
 
-      // Store credentials if "Remember Me" is checked
       if (rememberMe) {
         localStorage.setItem("savedUser", JSON.stringify(data));
       }
 
-      // Reset form and redirect after success
       reset();
       setTimeout(() => navigate("/signin"), 2000);
     }  catch (error: unknown) {
       if (error instanceof Error && "response" in error) {
-        const axiosError = error as { response?: { data?: { message?: string } } };  // Proper type assertion
+        const axiosError = error as { response?: { data?: { message?: string } } };
         setSnackbar({ open: true, message: axiosError.response?.data?.message || "Signup failed", severity: "error" });
       } else {
         setSnackbar({ open: true, message: "An unexpected error occurred", severity: "error" });
@@ -105,7 +103,6 @@ const SignUpPage: React.FC = () => {
 
   return (
     <Container maxWidth="sm">
-      {/* Glassmorphism UI Container */}
       <Paper className="auth-container">
         {/* Avatar Placeholder */}
         <div className="avatar-container">
@@ -136,7 +133,7 @@ const SignUpPage: React.FC = () => {
             )}
           />
 
-          {/* Password Input with Toggle Visibility */}
+          {/* Password Input */}
           <Controller
             name="password"
             control={control}
@@ -160,26 +157,61 @@ const SignUpPage: React.FC = () => {
             )}
           />
 
-          {/* "Remember Me" Checkbox */}
+          {/* Confirm Password Input */}
+          <Controller
+            name="confirmPassword"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Confirm Password"
+                type={showConfirmPassword ? "text" : "password"}
+                fullWidth
+                margin="normal"
+                error={!!errors.confirmPassword}
+                helperText={errors.confirmPassword?.message}
+                InputProps={{
+                  endAdornment: (
+                    <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  ),
+                }}
+              />
+            )}
+          />
+
+          {/* Remember Me Checkbox */}
           <FormControlLabel
             control={<Checkbox checked={rememberMe} onChange={() => setRememberMe(!rememberMe)} />}
             label="Remember Me"
           />
 
-          {/* OAuth Login Options */}
-          <div className="oauth-container">
-            <Button variant="contained" color="error" startIcon={<Google />}>
-              Google
-            </Button>
-            <Button variant="contained" color="primary" startIcon={<Facebook />}>
-              Facebook
-            </Button>
-          </div>
-
           {/* Submit Button */}
-          <Button type="submit" variant="contained" color="primary" fullWidth className="submit-button mt-4" disabled={loading}>
+          <Button 
+            type="submit" 
+            variant="contained" 
+            color="primary" 
+            fullWidth 
+            className="submit-button mt-4" 
+            sx={{ color: "white" }} 
+            disabled={loading}
+          >
             {loading ? <CircularProgress size={24} /> : "Sign Up"}
           </Button>
+
+          {/* OR Separator */}
+          <div className="or-separator">————— OR ——————</div>
+
+          {/* OAuth Login Options */}
+          <div className="oauth-container">
+            <Button variant="contained" color="error" startIcon={<Google />} fullWidth>
+              Sign in with Google
+            </Button>
+            <Button variant="contained" color="primary" startIcon={<Facebook />} fullWidth sx={{ color: "white" }}>
+              Sign in with Facebook
+            </Button>
+          </div>
 
           {/* Redirect to Sign-In */}
           <Typography variant="body2" align="center" className="sign-up-redirect">

@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 interface AuthContextType {
   authUser: (data: any) => void;
   logout: () => void;
+  isAuthenticated: boolean;
 }
 
 // Create AuthContext
@@ -23,12 +24,13 @@ export const useAuth = () => {
 
 // Type for decoded JWT token
 interface DecodedToken {
-  exp: number; // Expiration time in seconds
+  exp: number;
   id: string;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   /**
@@ -50,12 +52,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = localStorage.getItem("token");
 
     if (!token || isTokenExpired(token)) {
-      logout();
+      setIsAuthenticated(false);
+      logout(); // Only log out if needed
+    } else {
+      setIsAuthenticated(true); // ✅ Persist auth state on reload
     }
 
     setTimeout(() => {
-      setIsCheckingAuth(false); // Wait for splash screen before rendering routes
-    }, 4000);
+      setIsCheckingAuth(false); // ✅ Allow app to render once auth check is done
+    }, 2000); // Reduced from 4000ms
   }, []);
 
   /**
@@ -64,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const authUser = (data: any) => {
     localStorage.setItem("token", data.token);
     localStorage.setItem("userId", data.user._id);
+    setIsAuthenticated(true); // ✅ Update state when user logs in
   };
 
   /**
@@ -73,11 +79,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logoutUser();
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
+    setIsAuthenticated(false);
     navigate("/signin");
   };
 
   return (
-    <AuthContext.Provider value={{ authUser, logout }}>
+    <AuthContext.Provider value={{ authUser, logout, isAuthenticated }}>
       {!isCheckingAuth && children}
     </AuthContext.Provider>
   );

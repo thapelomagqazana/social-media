@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { useAuth } from "./context/AuthContext"; // Import AuthContext
 import SplashScreen from "./pages/SplashScreen";
 import SignUpPage from "./pages/SignUpPage";
 import SignInPage from "./pages/SignInPage";
 import UsersListPage from "./pages/UsersListPage";
 import ViewProfilePage from "./pages/ViewProfilePage";
 import EditProfilePage from "./pages/EditProfilePage";
-import DashboardPage from "./pages/DashboardPage";
+import HomePage from "./pages/HomePage";
 import PrivateRoute from "./components/PrivateRoute";
 import Menu from "./components/Menu";
 
@@ -17,11 +18,18 @@ import Menu from "./components/Menu";
  */
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
-    setTimeout(() => {
-      setShowSplash(false);
-    }, 4000);
+    // Show splash screen only on first load
+    const hasSeenSplash = sessionStorage.getItem("hasSeenSplash");
+    if (!hasSeenSplash) {
+      sessionStorage.setItem("hasSeenSplash", "true");
+      setTimeout(() => setShowSplash(false), 2000); // Reduce splash duration
+    } else {
+      setShowSplash(false); // Skip splash if already seen
+    }
   }, []);
 
   return (
@@ -29,7 +37,6 @@ const App: React.FC = () => {
       {showSplash ? (
         <SplashScreen />
       ) : (
-        /** Wrapping elements inside a parent `<>` fragment */
         <>
           <Menu />
           <Routes>
@@ -39,11 +46,17 @@ const App: React.FC = () => {
 
             {/* Private Routes */}
             <Route element={<PrivateRoute />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/home" element={<HomePage />} />
               <Route path="/users" element={<UsersListPage />} />
               <Route path="/profile/:userId" element={<ViewProfilePage />} />
               <Route path="/profile/edit/:userId" element={<EditProfilePage />} />
             </Route>
+
+            {/* Redirect unknown routes to home if authenticated, else signin */}
+            <Route
+              path="*"
+              element={isAuthenticated ? <HomePage /> : <SignInPage />}
+            />
           </Routes>
         </>
       )}
