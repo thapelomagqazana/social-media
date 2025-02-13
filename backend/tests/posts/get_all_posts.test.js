@@ -57,6 +57,16 @@ it("✅ Should fetch first page of posts", async () => {
 });
 
 /**
+ * ✅ Fetch first page of posts with page query
+ */
+it("✅ Should fetch first page of posts with page query", async () => {
+  const response = await request(app).get("/api/posts?page=1")
+  .set("Authorization", `Bearer ${user1Token}`);
+  expect(response.status).toBe(200);
+  expect(response.body.posts.length).toBeGreaterThan(0);
+});
+
+/**
  * ✅ Fetch paginated posts (limit = 2)
  */
 it("✅ Should fetch posts with pagination (limit=2)", async () => {

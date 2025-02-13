@@ -9,7 +9,7 @@ const isTestEnv = process.env.NODE_ENV === "test";
  */
 export const postRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: isTestEnv ? 20 : 10, // Limit each user to 10 posts per hour
+  max: isTestEnv ? 25 : 10, // Limit each user to 10 posts per hour
   message: { message: "Too many posts created. Try again later." },
   headers: true,
 });

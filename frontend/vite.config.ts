@@ -10,7 +10,6 @@ export default defineConfig(({ mode }) => {
       host: true,
       port: parseInt(env.VITE_PORT) || 5173,
       strictPort: true,
-      open: true,
       hmr: { overlay: true },
       watch: { usePolling: true },
       proxy: {

@@ -30,20 +30,20 @@ app.use(cookieParser()); // Parse and handle cookies
 app.use(compression()); // Compress response bodies
 app.use(helmet()); // Secure app with HTTP headers
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true })); // Allow frontend requests
-app.use((req, res, next) => {
-    console.log("👉 Incoming Request:", req.method, req.url);
-    console.log("📥 Request Body:", req.body);
-    console.log("📥 Request Headers:", req.headers);
+// app.use((req, res, next) => {
+//     console.log("👉 Incoming Request:", req.method, req.url);
+//     console.log("📥 Request Body:", req.body);
+//     console.log("📥 Request Headers:", req.headers);
   
-    const oldSend = res.send;
-    res.send = function (data) {
-      console.log("📤 Response Status:", res.statusCode);
-      console.log("📤 Response Body:", data);
-      oldSend.apply(res, arguments);
-    };
+//     const oldSend = res.send;
+//     res.send = function (data) {
+//       console.log("📤 Response Status:", res.statusCode);
+//       console.log("📤 Response Body:", data);
+//       oldSend.apply(res, arguments);
+//     };
   
-    next();
-});
+//     next();
+// });
   
 
 // Routes

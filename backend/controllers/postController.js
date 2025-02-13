@@ -16,38 +16,48 @@ import mongoose from "mongoose";
  * @returns {JSON} Success or error message
  */
 export const createPost = async (req, res) => {
-    try {
-      const { content, media } = req.body;
+  try {
+      const { content, media, hashtags } = req.body;
       const userId = req.user._id;
-  
+
       // Validate input
-      if (!content) {
-        return res.status(400).json({ message: "Post content is required" });
+      if (!content || typeof content !== "string" || content.trim().length === 0) {
+          return res.status(400).json({ message: "Post content is required" });
       }
-  
-      if (typeof content !== "string") {
-        return res.status(400).json({ message: "Invalid input format" }); // Correct message
-      }
-  
+
       if (content.length > 1000) {
-        return res.status(400).json({ message: "Post content cannot exceed 1000 characters" });
+          return res.status(400).json({ message: "Post content cannot exceed 1000 characters" });
       }
-  
+
       if (media && !/^https?:\/\/.+\.(jpg|jpeg|png|gif|mp4|webm|avi|mov)$/i.test(media)) {
-        return res.status(400).json({ message: "Invalid media URL" });
+          return res.status(400).json({ message: "Invalid media URL" });
       }
-  
-      // Create post
-      const newPost = await Post.create({ user: userId, content, media });
-  
+
+      // Extract hashtags and enforce strict rules
+      let extractedHashtags = Array.from(new Set(content.toLowerCase().match(/#([\p{L}\p{N}_]+)/gu) || []))
+          .map(tag => tag.slice(1).toLowerCase()) // Remove `#` and convert to lowercase
+          .filter(tag => tag.length >= 2 && tag.length <= 50); // Min 2, Max 50 chars
+
+      // Merge manually provided hashtags
+      if (Array.isArray(hashtags)) {
+          extractedHashtags = [...new Set([...extractedHashtags, ...hashtags.map(tag => tag.toLowerCase())])];
+      }
+
+      // Final strict filtering (allow only letters, numbers, underscores)
+      const validHashtags = extractedHashtags.filter(tag => /^[\p{L}\p{N}_]+$/u.test(tag));
+
+      // Create the post
+      const newPost = await Post.create({ user: userId, hashtags: validHashtags, content, media });
+
       // Increment postCount
       await User.findByIdAndUpdate(userId, { $inc: { postCount: 1 } });
-  
+
       return res.status(201).json({ message: "Post created successfully", post: newPost });
-    } catch (error) {
+  } catch (error) {
       return res.status(500).json({ message: `Internal server error: ${error.message}` });
-    }
+  }
 };
+
 
 /**
  * @function getPosts

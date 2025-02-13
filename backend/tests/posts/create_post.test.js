@@ -105,6 +105,142 @@ it("✅ Should create a post with correct timestamps", async () => {
 });
 
 /**
+ * ✅ Test: Extracts hashtags dynamically from content
+ */
+it("✅ Should extract hashtags from content and store them correctly", async () => {
+  const response = await request(app)
+    .post("/api/posts")
+    .set("Authorization", `Bearer ${user1Token}`)
+    .send({ content: "Learning #React and #NodeJS is fun!" });
+
+  expect(response.status).toBe(201);
+  expect(response.body.post.hashtags).toContain("react");
+  expect(response.body.post.hashtags).toContain("nodejs");
+});
+
+/**
+ * ✅ Test: Handles mixed-case hashtags properly
+ */
+it("✅ Should convert mixed-case hashtags to lowercase", async () => {
+  const response = await request(app)
+    .post("/api/posts")
+    .set("Authorization", `Bearer ${user1Token}`)
+    .send({ content: "Loving #JavaScript and #JAVASCRIPT!" });
+
+  expect(response.status).toBe(201);
+  expect(response.body.post.hashtags).toEqual(["javascript"]); // Duplicates removed & lowercased
+});
+
+/**
+ * ✅ Test: Prevents duplicate hashtags from being stored
+ */
+it("✅ Should prevent duplicate hashtags from being stored", async () => {
+  const response = await request(app)
+    .post("/api/posts")
+    .set("Authorization", `Bearer ${user1Token}`)
+    .send({ content: "This is #Cool and very #cool!" });
+
+  expect(response.status).toBe(201);
+  expect(response.body.post.hashtags.length).toBe(1); // Only "cool" should be stored
+  expect(response.body.post.hashtags).toContain("cool");
+});
+
+/**
+ * ✅ Test: Accepts manually provided hashtags along with extracted ones
+ */
+it("✅ Should merge manually provided hashtags with extracted ones", async () => {
+  const response = await request(app)
+    .post("/api/posts")
+    .set("Authorization", `Bearer ${user1Token}`)
+    .send({
+      content: "I love #Coding!",
+      hashtags: ["Programming", "Tech"]
+    });
+
+  expect(response.status).toBe(201);
+  expect(response.body.post.hashtags.sort()).toEqual(["coding", "programming", "tech"].sort());
+});
+
+/**
+ * ❌ Test: Rejects invalid hashtags (containing spaces)
+ */
+it("❌ Should reject hashtags with spaces", async () => {
+  const response = await request(app)
+    .post("/api/posts")
+    .set("Authorization", `Bearer ${user1Token}`)
+    .send({ content: "Invalid #hash tag example" });
+
+  expect(response.status).toBe(201); // Still creates the post, but does NOT store the invalid hashtag
+  expect(response.body.post.hashtags).not.toContain("hash tag");
+});
+
+/**
+ * ❌ Test: Rejects hashtags that are too long (over 50 characters)
+ */
+it("❌ Should reject hashtags exceeding 50 characters", async () => {
+  const longHashtag = "#".concat("a".repeat(51));
+  const response = await request(app)
+    .post("/api/posts")
+    .set("Authorization", `Bearer ${user1Token}`)
+    .send({ content: `Using a very long hashtag ${longHashtag}` });
+
+  expect(response.status).toBe(201); // Post still created but ignores the long hashtag
+  expect(response.body.post.hashtags).toEqual([]); // No invalid hashtag stored
+});
+
+/**
+ * ✅ Test: Accepts hashtags in non-English languages
+ */
+it("✅ Should allow hashtags in different languages", async () => {
+  const response = await request(app)
+    .post("/api/posts")
+    .set("Authorization", `Bearer ${user1Token}`)
+    .send({ content: "Check out this topic! #テクノロジー #创新" });
+
+  expect(response.status).toBe(201);
+  expect(response.body.post.hashtags.sort()).toEqual(["テクノロジー", "创新"].sort());
+});
+
+/**
+ * ✅ Test: Accepts hashtags with numbers
+ */
+it("✅ Should allow hashtags with numbers", async () => {
+  const response = await request(app)
+    .post("/api/posts")
+    .set("Authorization", `Bearer ${user1Token}`)
+    .send({ content: "Excited for #Web3 and #AI2024!" });
+
+  expect(response.status).toBe(201);
+  expect(response.body.post.hashtags.sort()).toEqual(["web3", "ai2024"].sort());
+});
+
+/**
+ * ✅ Test: Accepts hashtags with underscores
+ */
+it("✅ Should allow hashtags with underscores", async () => {
+  const response = await request(app)
+    .post("/api/posts")
+    .set("Authorization", `Bearer ${user1Token}`)
+    .send({ content: "Machine learning is great! #machine_learning" });
+
+  expect(response.status).toBe(201);
+  expect(response.body.post.hashtags).toEqual(["machine_learning"]);
+});
+
+/**
+ * ❌ Test: Rejects hashtags that are too short (less than 2 characters)
+ */
+it("❌ Should reject single-letter hashtags", async () => {
+  const response = await request(app)
+    .post("/api/posts")
+    .set("Authorization", `Bearer ${user1Token}`)
+    .send({ content: "Short hashtag #a" });
+
+  expect(response.status).toBe(201);
+  expect(response.body.post.hashtags).toEqual([]); // Invalid hashtag is ignored
+});
+
+/**
  * ❌ Test: User tries to create a post without authentication
  */
 it("❌ Should reject a request without authentication", async () => {
@@ -178,9 +314,9 @@ it("❌ Should reject a post with an invalid data type", async () => {
     .post("/api/posts")
     .set("Authorization", `Bearer ${user1Token}`)
     .send({ content: { text: 100 } });
-
+  
   expect(response.status).toBe(400);
-  expect(response.body.message).toBe("Invalid input format");
+  expect(response.body.message).toBe("Post content is required");
 });
 
 // /**
