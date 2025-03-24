@@ -11,7 +11,7 @@ import {
   updateUser,
   deleteUser,
 } from "../controllers/userController.js";
-import { protect, validateQueryParams } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ const router = express.Router();
  * @description Retrieves all users.
  * @access Protected (Requires authentication)
  */
-router.get("/", protect, validateQueryParams, getUsers);
+router.get("/", protect, getUsers);
 
 /**
  * @route GET /api/users/:userId

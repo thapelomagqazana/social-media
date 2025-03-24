@@ -26,8 +26,8 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       match: [
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        "Please enter a valid email address",
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        'Please enter a valid email address'
       ],
       maxlength: [255, "Email must be at most 255 characters long"],
     },
@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema(
       validate: {
         validator: function (value) {
           // Regex for a strong password: at least one uppercase, one lowercase, one digit, and one special character
-          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(
+          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])[A-Za-z\d@$!%*?&^#()_+\-=]{8,}$/.test(
             value
           );
         },
@@ -85,6 +85,8 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+userSchema.index({ email: 1 }, { unique: true });
 
 // Export the User model
 export default mongoose.model("User", userSchema);

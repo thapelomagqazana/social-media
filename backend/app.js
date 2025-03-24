@@ -11,6 +11,7 @@ import helmet from "helmet";
 import cors from "cors";
 import dotenv from "dotenv";
 import morgan from "morgan"; // HTTP request logger middleware
+import xss from 'xss-clean';
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 
@@ -27,21 +28,34 @@ app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded data
 app.use(cookieParser()); // Parse and handle cookies
 app.use(compression()); // Compress response bodies
 app.use(helmet()); // Secure app with HTTP headers
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true })); // Allow frontend requests
-app.use((req, res, next) => {
-    console.log("👉 Incoming Request:", req.method, req.url);
-    console.log("📥 Request Body:", req.body);
-    console.log("📥 Request Headers:", req.headers);
+app.use(xss());
+
+const whitelist = [process.env.FRONTEND_URL];
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || whitelist.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));// Allow frontend requests
+
+// app.use((req, res, next) => {
+//     console.log("👉 Incoming Request:", req.method, req.url);
+//     console.log("📥 Request Body:", req.body);
+//     console.log("📥 Request Headers:", req.headers);
   
-    const oldSend = res.send;
-    res.send = function (data) {
-      console.log("📤 Response Status:", res.statusCode);
-      console.log("📤 Response Body:", data);
-      oldSend.apply(res, arguments);
-    };
+//     const oldSend = res.send;
+//     res.send = function (data) {
+//       console.log("📤 Response Status:", res.statusCode);
+//       console.log("📤 Response Body:", data);
+//       oldSend.apply(res, arguments);
+//     };
   
-    next();
-});
+//     next();
+// });
   
 
 // Routes
@@ -49,6 +63,6 @@ app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);
 
 // Default route
-app.get("/", (req, res) => res.send("MERN Skeleton API Running"));
+app.get("/", (req, res) => res.send("MERN Social API Running"));
 
 export default app;
