@@ -405,78 +405,78 @@ describe('🔐 Security /auth/signup tests', () => {
   });
 });
 
-// describe('⚡ Performance /auth/signup tests', () => {
-//   // PF01
-//   it('PF01: should handle 100 concurrent valid signups', async () => {
-//     const signups = Array.from({ length: 100 }).map((_, i) =>
-//       request(app).post('/auth/signup').send({
-//         name: `User${i}`,
-//         email: `loadtest${i}@example.com`,
-//         password: 'Aa1@secure',
-//       })
-//     );
-//     const responses = await Promise.all(signups);
-//     const successful = responses.filter(res => res.statusCode === 201);
-//     expect(successful.length).toBe(100);
-//   }, 20000);
+describe('⚡ Performance /auth/signup tests', () => {
+  // PF01
+  it.skip('PF01: should handle 100 concurrent valid signups', async () => {
+    const signups = Array.from({ length: 100 }).map((_, i) =>
+      request(app).post('/auth/signup').send({
+        name: `User${i}`,
+        email: `loadtest${i}@example.com`,
+        password: 'Aa1@secure',
+      })
+    );
+    const responses = await Promise.all(signups);
+    const successful = responses.filter(res => res.statusCode === 201);
+    expect(successful.length).toBe(100);
+  }, 20000);
 
-//   // PF02
-//   it('PF02: should allow only 1 signup for same email among 1000 requests', async () => {
-//     const flood = Array.from({ length: 1000 }).map(() =>
-//       request(app).post('/auth/signup').send({
-//         name: 'Flood',
-//         email: 'flood@example.com',
-//         password: 'Aa1@secure',
-//       })
-//     );
-//     const responses = await Promise.all(flood);
-//     const created = responses.filter(r => r.statusCode === 201);
-//     const failed = responses.filter(r => r.statusCode === 400);
-//     expect(created.length).toBe(1);
-//     expect(failed.length).toBe(999);
-//   }, 30000);
+  // PF02
+  it.skip('PF02: should allow only 1 signup for same email among 1000 requests', async () => {
+    const flood = Array.from({ length: 1000 }).map(() =>
+      request(app).post('/auth/signup').send({
+        name: 'Flood',
+        email: 'flood@example.com',
+        password: 'Aa1@secure',
+      })
+    );
+    const responses = await Promise.all(flood);
+    const created = responses.filter(r => r.statusCode === 201);
+    const failed = responses.filter(r => r.statusCode === 400);
+    expect(created.length).toBe(1);
+    expect(failed.length).toBe(999);
+  }, 30000);
 
-//   // PF03
-//   it('PF03: response time under 200ms with 50 users', async () => {
-//     const start = Date.now();
-//     const users = Array.from({ length: 50 }).map((_, i) =>
-//       request(app).post('/auth/signup').send({
-//         name: `FastUser${i}`,
-//         email: `fast${i}@example.com`,
-//         password: 'Aa1@fast123',
-//       })
-//     );
-//     await Promise.all(users);
-//     const end = Date.now();
-//     const duration = end - start;
-//     expect(duration).toBeLessThan(200 * 50); // <10s total for 50 users
-//   }, 15000);
+  // PF03
+  it.skip('PF03: response time under 200ms with 50 users', async () => {
+    const start = Date.now();
+    const users = Array.from({ length: 50 }).map((_, i) =>
+      request(app).post('/auth/signup').send({
+        name: `FastUser${i}`,
+        email: `fast${i}@example.com`,
+        password: 'Aa1@fast123',
+      })
+    );
+    await Promise.all(users);
+    const end = Date.now();
+    const duration = end - start;
+    expect(duration).toBeLessThan(200 * 50); // <10s total for 50 users
+  }, 15000);
 
-//   // PF04
-//   it('PF04: should handle simulated DB delay gracefully', async () => {
-//     jest.setTimeout(10000); // Extend timeout
-//     const res = await request(app).post('/auth/signup').send({
-//       name: 'DelaySim',
-//       email: 'delayed@example.com',
-//       password: 'Aa1@slow',
-//     });
-//     expect([201, 500]).toContain(res.statusCode); // Graceful fallback
-//   });
+  // PF04
+  it.skip('PF04: should handle simulated DB delay gracefully', async () => {
+    jest.setTimeout(10000); // Extend timeout
+    const res = await request(app).post('/auth/signup').send({
+      name: 'DelaySim',
+      email: 'delayed@example.com',
+      password: 'Aa1@slow',
+    });
+    expect([201, 500]).toContain(res.statusCode); // Graceful fallback
+  });
 
-//   // PF05
-//   it('PF05: should not crash under high CPU load', async () => {
-//     const flood = Array.from({ length: 500 }).map((_, i) =>
-//       request(app).post('/auth/signup').send({
-//         name: `Stress${i}`,
-//         email: `stress${i}@example.com`,
-//         password: 'Aa1@stress',
-//       })
-//     );
-//     const responses = await Promise.all(flood);
-//     const codes = responses.map(r => r.statusCode);
-//     expect(codes).not.toContain(503); // No server crash
-//   }, 20000);
-// });
+  // PF05
+  it.skip('PF05: should not crash under high CPU load', async () => {
+    const flood = Array.from({ length: 500 }).map((_, i) =>
+      request(app).post('/auth/signup').send({
+        name: `Stress${i}`,
+        email: `stress${i}@example.com`,
+        password: 'Aa1@stress',
+      })
+    );
+    const responses = await Promise.all(flood);
+    const codes = responses.map(r => r.statusCode);
+    expect(codes).not.toContain(503); // No server crash
+  }, 20000);
+});
 
 describe('♻️ Reliability /auth/signup tests', () => {
   // R01
@@ -500,21 +500,21 @@ describe('♻️ Reliability /auth/signup tests', () => {
     expect([500, 503]).toContain(res.statusCode);// Reconnect
   });
 
-  // // R03
-  // it('R03: signup should work again after DB reconnect', async () => {
-  //   await mongoose.connect(cachedUri, {
-  //     useNewUrlParser: true,
-  //     useUnifiedTopology: true,
-  //   });
+  // R03
+  it.skip('R03: signup should work again after DB reconnect', async () => {
+    await mongoose.connect(cachedUri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
   
-  //   const res = await request(app).post('/auth/signup').send({
-  //     name: 'Reconnect',
-  //     email: 'reconnect@test.com',
-  //     password: 'Aa1@db',
-  //   });
+    const res = await request(app).post('/auth/signup').send({
+      name: 'Reconnect',
+      email: 'reconnect@test.com',
+      password: 'Aa1@db',
+    });
   
-  //   expect(res.statusCode).toBe(201);
-  // });
+    expect(res.statusCode).toBe(201);
+  });
 
   // R04
   it('R04: malformed JSON should return 400', async () => {
@@ -525,18 +525,18 @@ describe('♻️ Reliability /auth/signup tests', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  // // R05
-  // it('R05: 1000 repeat signups should not crash or leak memory', async () => {
-  //   const users = Array.from({ length: 1000 }).map((_, i) =>
-  //     request(app).post('/auth/signup').send({
-  //       name: `LoopUser${i}`,
-  //       email: `loop${i}@example.com`,
-  //       password: 'Aa1@loop',
-  //     })
-  //   );
-  //   const results = await Promise.all(users);
-  //   expect(results.filter(r => r.statusCode === 201).length).toBe(1000);
-  // }, 30000);
+  // R05
+  it.skip('R05: 1000 repeat signups should not crash or leak memory', async () => {
+    const users = Array.from({ length: 1000 }).map((_, i) =>
+      request(app).post('/auth/signup').send({
+        name: `LoopUser${i}`,
+        email: `loop${i}@example.com`,
+        password: 'Aa1@loop',
+      })
+    );
+    const results = await Promise.all(users);
+    expect(results.filter(r => r.statusCode === 201).length).toBe(1000);
+  }, 30000);
 });
 
 

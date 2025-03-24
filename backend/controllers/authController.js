@@ -15,9 +15,16 @@ import mongoose from "mongoose";
  * @returns {string} - Signed JWT token
  */
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+  return jwt.sign(
+    {
+      userId,
+      iat: Math.floor(Date.now() / 1000), // issued at
+      jti: crypto.randomUUID(), // unique ID for this token (optional)
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+  
 };
 
 /**
@@ -77,17 +84,25 @@ export const signup = async (req, res) => {
 export const signin = async (req, res) => {
   const { email, password } = req.body;
 
+  // Validate presence
+  if (!email || !password) {
+    return res.status(400).json({ message: !email ? "Email is required" : "Password is required" });
+  }
+
+  // Validate format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim())) {
+    return res.status(400).json({ message: "Please enter a valid email address" });
+  }
+
   try {
-    const user = await User.findOne({ email });
-    if (!user)
-      return res.status(400).json({ message: "Invalid credentials" });
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
     const isMatch = await user.matchPassword(password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
     const token = generateToken(user._id);
-
     res.cookie("token", token, {
       httpOnly: true,
       secure: true,
