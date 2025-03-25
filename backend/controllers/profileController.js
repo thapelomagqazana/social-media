@@ -1,4 +1,5 @@
 import Profile from "../models/Profile.js";
+import escape from 'escape-html';
 
 /**
  * @desc    Get a user's profile
@@ -14,6 +15,10 @@ export const getProfile = async (req, res) => {
     if (!profile) {
       return res.status(404).json({ message: "Profile not found" });
     }
+
+    // Escape fields that are user-generated
+    profile.username = escape(profile.username || '');
+    profile.bio = escape(profile.bio || '');
 
     res.status(200).json(profile);
   } catch (error) {
@@ -46,6 +51,10 @@ export const updateProfile = async (req, res) => {
     if (username) profile.username = username.trim();
     if (bio) profile.bio = bio.trim();
     if (profilePicture) profile.profilePicture = profilePicture;
+
+    // Escape fields that are user-generated
+    profile.username = escape(profile.username || '');
+    profile.bio = escape(profile.bio || '');
 
     await profile.save();
 

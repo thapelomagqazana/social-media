@@ -3,29 +3,9 @@
  * @module controllers/authController
  * @description Handles user registration, login, and logout using JWT and cookies.
  */
-
-import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import mongoose from "mongoose";
-
-/**
- * @function generateToken
- * @description Creates a JWT token for the given user ID
- * @param {string} userId - MongoDB user ID
- * @returns {string} - Signed JWT token
- */
-const generateToken = (userId) => {
-  return jwt.sign(
-    {
-      userId,
-      iat: Math.floor(Date.now() / 1000), // issued at
-      jti: crypto.randomUUID(), // unique ID for this token (optional)
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: '7d' }
-  );
-  
-};
+import { generateToken } from "../utils/token.js";
 
 /**
  * @function signup

@@ -16,10 +16,8 @@ dotenv.config();
 
 let mongoServer;
 
-let cachedUri;
 
 beforeAll(async () => {
-  cachedUri = global.__MONGO_URI__;
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
   await mongoose.connect(uri);
@@ -502,10 +500,7 @@ describe('♻️ Reliability /auth/signup tests', () => {
 
   // R03
   it.skip('R03: signup should work again after DB reconnect', async () => {
-    await mongoose.connect(cachedUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(mongoServer.getUri());
   
     const res = await request(app).post('/auth/signup').send({
       name: 'Reconnect',

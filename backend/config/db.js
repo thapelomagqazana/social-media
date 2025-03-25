@@ -17,6 +17,7 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true, // Use the new URL parser for MongoDB
       useUnifiedTopology: true, // Use the new Server Discovery and Monitoring engine
+      maxPoolSize: 100, // Increase pool size for load testing
     });
 
     // Log the successful connection
