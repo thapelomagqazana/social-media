@@ -12,6 +12,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import morgan from "morgan"; // HTTP request logger middleware
 import xss from 'xss-clean';
+import profileRoutes from "./routes/profileRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 
@@ -59,6 +60,7 @@ app.use(cors({
   
 
 // Routes
+app.use("/api/profile", profileRoutes);
 app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);
 
