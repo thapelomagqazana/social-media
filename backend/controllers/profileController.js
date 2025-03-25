@@ -1,5 +1,6 @@
 import Profile from "../models/Profile.js";
 import escape from 'escape-html';
+import mongoose from "mongoose";
 
 /**
  * @desc    Get a user's profile
@@ -36,11 +37,25 @@ export const updateProfile = async (req, res) => {
   const { username, bio, profilePicture } = req.body;
 
   try {
-    // Ensure only the owner can update their profile
-    if (req.user._id.toString() !== userId) {
-      return res.status(403).json({ message: "Unauthorized" });
+    if (Object.keys(req.body).length === 0) {
+        return res.status(400).json({ message: 'No update fields provided' });
     }
 
+    const forbidden = ['role', 'password', 'tokens'];
+    const hasForbidden = Object.keys(req.body).some(f => forbidden.includes(f));
+    if (hasForbidden) {
+    return res.status(403).json({ message: 'Cannot update restricted fields' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+    }
+      
+    // Ensure only the owner can update their profile
+    if (req.user._id.toString() !== userId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+      
     let profile = await Profile.findOne({ user: userId });
 
     // Create profile if not exists
@@ -48,13 +63,9 @@ export const updateProfile = async (req, res) => {
       profile = new Profile({ user: userId });
     }
 
-    if (username) profile.username = username.trim();
-    if (bio) profile.bio = bio.trim();
-    if (profilePicture) profile.profilePicture = profilePicture;
-
-    // Escape fields that are user-generated
-    profile.username = escape(profile.username || '');
-    profile.bio = escape(profile.bio || '');
+    if (req.body.hasOwnProperty('username')) profile.username = escape(username?.trim() || '');
+    if (req.body.hasOwnProperty('bio')) profile.bio = escape(bio?.trim() || '');
+    if (req.body.hasOwnProperty('profilePicture')) profile.profilePicture = profilePicture;    
 
     await profile.save();
 
@@ -64,6 +75,9 @@ export const updateProfile = async (req, res) => {
       return res.status(400).json({ message: "Username already taken" });
     }
 
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+    }
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
