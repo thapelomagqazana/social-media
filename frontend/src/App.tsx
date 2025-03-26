@@ -6,7 +6,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // import NotFound from './pages/NotFound';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import LandingPage from './pages/LandingPage';
+// import LandingPage from './pages/LandingPage';
+import Splash from './pages/Splash';
 import SignUpPage from './pages/SignUpPage';
 import SignInPage from './pages/SignInPage';
 import ViewProfilePage from "./pages/ViewProfilePage";
@@ -16,11 +17,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 export default function App() {
   return (
     <Router>
-      <div className="flex flex-col min-h-screen">
+      <div>
         <Navbar />
-        <main className="flex-grow container mx-auto p-4">
+        <main>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<Splash />} />
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/signin" element={<SignInPage />} />
             {/* Protected Routes */}
