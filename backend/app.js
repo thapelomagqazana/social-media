@@ -15,6 +15,7 @@ import xss from 'xss-clean';
 import profileRoutes from "./routes/profileRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import followRoutes from "./routes/followRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -61,6 +62,7 @@ app.use(cors({
 
 // Routes
 app.use("/api/profile", profileRoutes);
+app.use("/api/follow", followRoutes);
 app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);
 
