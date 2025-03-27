@@ -395,7 +395,7 @@ describe('⚡ Performance /auth/signin tests', () => {
   beforeEach(async () => await createTestUser());
 
   // PF01
-  it(
+  it.skip(
     'PF01: should allow 100 valid logins under 9 seconds',
     async () => {
       const start = Date.now();

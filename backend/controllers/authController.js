@@ -111,3 +111,25 @@ export const signout = (req, res) => {
   res.clearCookie("token");
   res.status(200).json({ message: "Logged out" });
 };
+
+/**
+ * @desc    Get current logged-in user
+ * @route   GET /auth/me
+ * @access  Private
+ */
+export const getMe = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized, user not found' });
+    }
+
+    res.status(200).json({
+      _id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

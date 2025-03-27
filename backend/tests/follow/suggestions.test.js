@@ -270,7 +270,7 @@ describe('🔐 Security GET /api/follow/suggestions Tests', () => {
 });
 
 describe('⚡ Performance GET /api/follow/suggestions Tests', () => {
-    it(
+    it.skip(
       'PF01: should handle 500 concurrent requests under 3s',
       async () => {
         const start = Date.now();

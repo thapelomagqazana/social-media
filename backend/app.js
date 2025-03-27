@@ -41,7 +41,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true, // Allow cookies to be sent
 }));// Allow frontend requests
 
 // app.use((req, res, next) => {
