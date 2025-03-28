@@ -32,6 +32,7 @@ beforeEach(async () => {
     user: user._id,
     username: 'regular_user',
     bio: 'Just a regular user',
+    interests: ['coding', 'music'],
     profilePicture: 'https://example.com/pic.jpg',
   });
 
@@ -87,8 +88,8 @@ describe('✅ Positive /api/profile/:userId Tests', () => {
       .set('Cookie', [`token=${userToken}`])
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('username', 'regular_user');
-    expect(res.body).toHaveProperty('bio');
+    expect(res.body.profile).toHaveProperty('username', 'regular_user');
+    expect(res.body.profile).toHaveProperty('bio');
   });
 
   // P02
@@ -98,8 +99,8 @@ describe('✅ Positive /api/profile/:userId Tests', () => {
       .set('Cookie', [`token=${userToken}`])
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('user');
-    expect(res.body.user).toHaveProperty('email', 'user@example.com');
+    expect(res.body.profile).toHaveProperty('user');
+    expect(res.body.profile.user).toHaveProperty('email', 'user@example.com');
   });
 
   // P03
@@ -109,7 +110,7 @@ describe('✅ Positive /api/profile/:userId Tests', () => {
       .set('Cookie', [`token=${userToken}`])
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('username', 'regular_user');
+    expect(res.body.profile).toHaveProperty('username', 'regular_user');
   });
 
   // P04
@@ -119,8 +120,8 @@ describe('✅ Positive /api/profile/:userId Tests', () => {
       .set('Cookie', [`token=${userToken}`])
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('user');
-    expect(res.body.user).toMatchObject({
+    expect(res.body.profile).toHaveProperty('user');
+    expect(res.body.profile.user).toMatchObject({
       email: 'user@example.com',
       name: 'Regular User',
     });
@@ -132,7 +133,7 @@ describe('✅ Positive /api/profile/:userId Tests', () => {
       .set('Cookie', [`token=${userToken}`]);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body).toHaveProperty('username'); 
+      expect(res.body.profile).toHaveProperty('username'); 
   });
 });
 
@@ -209,9 +210,9 @@ describe('🔳 Edge /api/profile/:userId Tests', () => {
         .set('Cookie', [`token=${userToken}`]);
   
       expect(res.statusCode).toBe(200);
-      expect(res.body.username).toBe(longUsername);
-      expect(res.body.bio).toBe(longBio);
-      expect(res.body.profilePicture).toBe(longUrl);
+      expect(res.body.profile.username).toBe(longUsername);
+      expect(res.body.profile.bio).toBe(longBio);
+      expect(res.body.profile.profilePicture).toBe(longUrl);
     });
   
     // E03
@@ -228,8 +229,8 @@ describe('🔳 Edge /api/profile/:userId Tests', () => {
         .set('Cookie', [`token=${userToken}`]);
   
       expect(res.statusCode).toBe(200);
-      expect(res.body.username).toMatch(/user/);
-      expect(res.body.bio).toContain('Node.js');
+      expect(res.body.profile.username).toMatch(/user/);
+      expect(res.body.profile.bio).toContain('Node.js');
     });
   
     // E04
@@ -245,8 +246,8 @@ describe('🔳 Edge /api/profile/:userId Tests', () => {
         .set('Cookie', [`token=${userToken}`]);
   
       expect(res.statusCode).toBe(200);
-      expect(res.body.bio).toBe('');
-      expect(res.body.profilePicture).toBe('');
+      expect(res.body.profile.bio).toBe('');
+      expect(res.body.profile.profilePicture).toBe('');
     });
   
     // E05
@@ -256,7 +257,7 @@ describe('🔳 Edge /api/profile/:userId Tests', () => {
         .set('Cookie', [`token=${userToken}`]);
   
       expect(res.statusCode).toBe(200);
-      expect(res.body).toHaveProperty('username');
+      expect(res.body.profile).toHaveProperty('username');
     });
 });
 
@@ -270,7 +271,7 @@ describe('🔲 Corner /api/profile/:userId Tests', () => {
   
       expect(res1.statusCode).toBe(200);
       expect(res2.statusCode).toBe(200);
-      expect(res1.body).toEqual(res2.body);
+      expect(res1.body.profile).toEqual(res2.body.profile);
     });
   
     // C02
@@ -282,7 +283,7 @@ describe('🔲 Corner /api/profile/:userId Tests', () => {
         .set('Cookie', [`token=${userToken}`]);
   
       expect(res.statusCode).toBe(200);
-      expect(res.body.bio).toBe('Updated bio');
+      expect(res.body.profile.bio).toBe('Updated bio');
     });
   
     // C03
@@ -306,7 +307,7 @@ describe('🔲 Corner /api/profile/:userId Tests', () => {
         .set('Cookie', [`token=${userToken}`]);
   
       expect(res.statusCode).toBe(200);
-      expect(res.body.username).toBe('sameName');
+      expect(res.body.profile.username).toBe('samename');
     });
 });
 
@@ -360,8 +361,8 @@ describe('🔐 Security /api/profile/:userId Tests', () => {
         .set('Cookie', [`token=${userToken}`]);
   
       expect(res.statusCode).toBe(200);
-      expect(res.body).not.toHaveProperty('password');
-      expect(res.body).not.toHaveProperty('token');
+      expect(res.body.profile).not.toHaveProperty('password');
+      expect(res.body.profile).not.toHaveProperty('token');
     });
 });
 
@@ -409,7 +410,7 @@ describe('⚡ Performance /api/profile/:userId Tests', () => {
         .set('Cookie', [`token=${userToken}`]);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('username');
+    expect(res.body.profile).toHaveProperty('username');
     });
 });
 
@@ -439,7 +440,7 @@ describe('♻️ Reliability /api/profile/:userId Tests', () => {
         request(app).get(`/api/profile/${userId}`).set('Cookie', [`token=${userToken}`]),
     ]);
 
-    expect(res1.body).toEqual(res2.body);
+    expect(res1.body.profile).toEqual(res2.body.profile);
     });
 
     it('R04: should return accurate data for new profile fetch', async () => {
@@ -452,7 +453,7 @@ describe('♻️ Reliability /api/profile/:userId Tests', () => {
         .set('Cookie', [`token=${token}`]);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.username).toBe('brandNew');
+    expect(res.body.profile.username).toBe('brandnew');
     });
 });
   

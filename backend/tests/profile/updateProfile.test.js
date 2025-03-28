@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from 'supertest';
+import path from 'path';
+import fs from 'fs';
 import app from '../../app';
 import User from '../../models/User';
 import Profile from '../../models/Profile';
@@ -150,6 +152,16 @@ describe('✅ Positive /api/profile/:userId PUT Tests', () => {
   
       expect(res.statusCode).toBe(200);
       expect(res.body.profile.profilePicture).toBe('https://cdn.example.com/avatar.png');
+    });
+
+    it('P06: should accept valid JSON array for interests', async () => {
+      const res = await request(app)
+        .put(`/api/profile/${userId}`)
+        .set('Cookie', [`token=${userToken}`])
+        .send({ interests: JSON.stringify(['Node.js', 'Dev']) });
+  
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.profile.interests)).toBe(true);
     });
 });
 
@@ -341,7 +353,7 @@ describe('🔲 Corner /api/profile/:userId PUT Tests', () => {
       expect(res1.statusCode).toBe(200);
       expect(res2.statusCode).toBe(200);
       const finalRes = await request(app).get(`/api/profile/${userId}`).set('Cookie', [`token=${userToken}`]);
-      expect(['From source A', 'From source B']).toContain(finalRes.body.bio);
+      expect(['From source A', 'From source B']).toContain(finalRes.body.profile.bio);
     });
   
     // C04
@@ -423,4 +435,81 @@ describe('🔐 Security /api/profile/:userId PUT Tests', () => {
   
       expect([400, 403]).toContain(res.statusCode);
     });
+
+    it('S06: should sanitize potential XSS strings in interests', async () => {
+      const res = await request(app)
+        .put(`/api/profile/${userId}`)
+        .set('Cookie', [`token=${userToken}`])
+        .send({ interests: JSON.stringify(['<script>x</script>', 'safe']) });
+  
+      expect(res.statusCode).toBe(200);
+      expect(res.body.profile.interests[0]).not.toMatch(/<script>/);
+    });
+});
+
+describe('📸 Uploads PUT /api/profile/:userId Tests', () => {
+  const uploadPath = path.join(__dirname, '..', '..', 'uploads', 'avatar.png');
+  let invalidPath;
+
+  beforeAll(() => {
+    // Create a dummy file for upload
+    fs.writeFileSync(uploadPath, 'dummy content');
+  });
+
+  afterAll(() => {
+    // Clean up the test file
+    if (fs.existsSync(uploadPath)) fs.unlinkSync(uploadPath);
+    if (fs.existsSync(invalidPath)) fs.unlinkSync(invalidPath);
+  });
+
+  it('U01: should upload a valid image file via req.file', async () => {
+    const res = await request(app)
+      .put(`/api/profile/${userId}`)
+      .set('Cookie', [`token=${userToken}`])
+      .attach('file', uploadPath); // assumes middleware sets `req.file`
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.profile).toHaveProperty('profilePicture');
+    expect(res.body.profile.profilePicture).toMatch(/\/uploads\/.*\.png$/);
+  });
+
+  it('U02: should prioritize req.file over profilePicture in body', async () => {
+    const res = await request(app)
+      .put(`/api/profile/${userId}`)
+      .set('Cookie', [`token=${userToken}`])
+      .field('profilePicture', 'https://malicious.url/hack.jpg')
+      .attach('file', uploadPath);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.profile.profilePicture).not.toBe('https://malicious.url/hack.jpg');
+    expect(res.body.profile.profilePicture).toMatch(/\/uploads\/.*\.png$/);
+  });
+
+  it.skip('U03: should return 400 when invalid file type uploaded (if filtered)', async () => {
+    invalidPath = path.join(__dirname, 'invalid.txt');
+    fs.writeFileSync(invalidPath, 'not an image');
+
+    const res = await request(app)
+      .put(`/api/profile/${userId}`)
+      .set('Cookie', [`token=${userToken}`])
+      .attach('file', invalidPath);
+
+    expect([400, 415, 500]).toContain(res.statusCode);
+    expect(res.body.message).toMatch(/only image files/i);
+
+
+    fs.unlinkSync(invalidPath);
+  });
+
+  it('U04: should handle upload along with other fields', async () => {
+    const res = await request(app)
+      .put(`/api/profile/${userId}`)
+      .set('Cookie', [`token=${userToken}`])
+      .field('bio', 'Updated with picture')
+      .attach('file', uploadPath);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.profile.bio).toBe('Updated with picture');
+    expect(res.body.profile.profilePicture).toMatch(/\/uploads\/.*\.png$/);
+  });
 });

@@ -1,37 +1,48 @@
+/**
+ * Profile Model
+ * Associates extended profile details with a user
+ */
+
 import mongoose from "mongoose";
 
-/**
- * @description Schema for user profile linked to the User model
- */
-const profileSchema = new mongoose.Schema(
+const ProfileSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true,
+      unique: true, // Each user has one profile
     },
+
     username: {
       type: String,
-      required: true,
       trim: true,
+      lowercase: true,
       unique: true,
+      sparse: true, // allow null/undefined
+      minlength: 3,
       maxlength: 30,
     },
+
     bio: {
       type: String,
-      maxlength: 200,
-      default: "",
+      maxlength: 300,
     },
+
     profilePicture: {
-      type: String, // URL or cloudinary path
-      default: "",
+      type: String, // path or external URL
+      default: "",  // optional
+    },
+
+    interests: {
+      type: [String],
+      default: [],
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-// Create compound index to ensure fast lookups
-profileSchema.index({ username: 1 });
-
-export default mongoose.model("Profile", profileSchema);
+const Profile = mongoose.model("Profile", ProfileSchema);
+export default Profile;

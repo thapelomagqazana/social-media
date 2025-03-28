@@ -12,6 +12,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import morgan from "morgan"; // HTTP request logger middleware
 import xss from 'xss-clean';
+import fs from "fs";
+import path from "path";
 import profileRoutes from "./routes/profileRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -20,8 +22,17 @@ import followRoutes from "./routes/followRoutes.js";
 // Load environment variables
 dotenv.config();
 
+// Create uploads directory if it doesn't exist
+const uploadDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
 // Initialize Express app
 const app = express();
+
+// Serve Static Uploads
+app.use("/uploads", express.static("uploads"));
 
 // Middleware configuration
 app.use(morgan("dev")); // Log HTTP requests and responses in the terminal
@@ -68,5 +79,14 @@ app.use("/auth", authRoutes);
 
 // Default route
 app.get("/", (req, res) => res.send("MERN Social API Running"));
+
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError || err.message.includes("Only image files")) {
+    return res.status(400).json({ message: err.message });
+  }
+
+  next(err);
+});
+
 
 export default app;
