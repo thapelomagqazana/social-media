@@ -15,9 +15,9 @@ import xss from 'xss-clean';
 import fs from "fs";
 import path from "path";
 import profileRoutes from "./routes/profileRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
+import postRoutes from "./routes/postRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -74,7 +74,7 @@ app.use(cors({
 // Routes
 app.use("/api/profile", profileRoutes);
 app.use("/api/follow", followRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/posts", postRoutes);
 app.use("/auth", authRoutes);
 
 // Default route

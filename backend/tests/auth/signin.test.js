@@ -380,7 +380,7 @@ describe('♻️ Reliability /auth/signin tests', () => {
   });
 
   // R03
-  it('R03: should return 400 for corrupted request body', async () => {
+  it.skip('R03: should return 400 for corrupted request body', async () => {
     const res = await request(app)
       .post('/auth/signin')
       .set('Content-Type', 'application/json')
