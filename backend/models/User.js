@@ -47,10 +47,14 @@ const userSchema = new mongoose.Schema(
       },
     },
     role: {
-        type: String,
-        enum: ["admin", "user"],
-        default: "user",
+      type: String,
+      enum: ['user', 'moderator', 'admin'],
+      default: 'user',
     },
+    isBanned: {
+      type: Boolean,
+      default: false,
+    },    
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     createdAt: {

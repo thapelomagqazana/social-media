@@ -19,7 +19,8 @@ import authRoutes from "./routes/authRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
-import notificationRoutes from './routes/notificationRoutes.js'; 
+import notificationRoutes from './routes/notificationRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -79,6 +80,7 @@ app.use("/api/follow", followRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/search", searchRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 app.use("/auth", authRoutes);
 
 // Default route

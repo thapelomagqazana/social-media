@@ -1,5 +1,5 @@
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, checkBanned } from "../middleware/authMiddleware.js";
 import { upload } from "../middleware/uploadMiddleware.js";
 import {
   createPost,
@@ -18,10 +18,10 @@ const router = express.Router();
  * @route POST    /api/posts/:postId/comment  Add a comment
  * @route — GET   /api/posts/newsfeed   Get newsfeed
  */
-router.post("/", protect, upload.single("image"), createPost);
-router.delete("/:postId", protect, deletePost);
-router.put("/:postId/like", protect, toggleLikePost);
-router.post("/:postId/comment", protect, commentOnPost);
-router.get("/newsfeed", protect, getNewsfeed);
+router.post("/", protect, checkBanned, upload.single("image"), createPost);
+router.delete("/:postId", protect, checkBanned, deletePost);
+router.put("/:postId/like", protect, checkBanned, toggleLikePost);
+router.post("/:postId/comment", protect, checkBanned, commentOnPost);
+router.get("/newsfeed", protect, checkBanned, getNewsfeed);
 
 export default router;
