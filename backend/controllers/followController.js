@@ -1,6 +1,7 @@
 import Follow from "../models/Follow.js";
 import User from "../models/User.js";
 import mongoose from "mongoose";
+import { createNotification } from "../utils/notify.js";
 
 /**
  * @desc    Follow a user
@@ -12,21 +13,37 @@ export const followUser = async (req, res) => {
     const { userId } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).json({ message: 'Invalid user ID' });
+      return res.status(400).json({ message: 'Invalid user ID' });
     }
-      
-    if (req.user._id.toString() === userId)
+
+    if (req.user._id.toString() === userId) {
       return res.status(400).json({ message: "Cannot follow yourself" });
+    }
 
-    const follow = await Follow.findOneAndUpdate(
-      { follower: req.user._id, following: userId },
-      {},
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    const alreadyFollowing = await Follow.findOne({
+      follower: req.user._id,
+      following: userId,
+    });
 
-    res.status(200).json({ message: "Followed user", follow });
+    if (alreadyFollowing) {
+      return res.status(200).json({ message: "Already following" });
+    }
+
+    const follow = await Follow.create({
+      follower: req.user._id,
+      following: userId,
+    });
+
+    // Trigger follow notification
+    await createNotification({
+      type: 'follow',
+      recipient: userId,
+      sender: req.user._id,
+    });
+
+    return res.status(200).json({ message: "Followed user", follow });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
@@ -36,35 +53,33 @@ export const followUser = async (req, res) => {
  * @access  Private
  */
 export const unfollowUser = async (req, res) => {
-    const { userId } = req.params;
-  
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: 'Invalid user ID' });
+  const { userId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: 'Invalid user ID' });
+  }
+
+  if (req.user._id.toString() === userId) {
+    return res.status(400).json({ message: 'Cannot unfollow yourself' });
+  }
+
+  try {
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(200).json({ message: 'User not found, but treated as unfollowed' });
     }
-  
-    if (req.user._id.toString() === userId) {
-      return res.status(400).json({ message: 'Cannot unfollow yourself' });
-    }
-  
-    try {
-      const targetUser = await User.findById(userId);
-      if (!targetUser) {
-        // Soft fail if user doesn't exist
-        return res.status(200).json({ message: 'User not found, but treated as unfollowed' });
-      }
-  
-      const follow = await Follow.findOneAndDelete({
-        follower: req.user._id,
-        following: userId
-      });
-  
-      // Whether or not a follow existed, we still return OK
-      return res.status(200).json({
-        message: follow ? 'Unfollowed user' : 'Already not following user'
-      });
-    } catch (err) {
-      return res.status(500).json({ message: 'Server error', error: err.message });
-    }
+
+    const follow = await Follow.findOneAndDelete({
+      follower: req.user._id,
+      following: userId
+    });
+
+    return res.status(200).json({
+      message: follow ? 'Unfollowed user' : 'Already not following user'
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
 };
 
 /**

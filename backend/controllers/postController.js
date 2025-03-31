@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Comment from "../models/Comment.js";
 import mongoose from "mongoose";
 import escape from "escape-html";
+import { createNotification } from "../utils/notify.js";
 
 /**
  * @desc    Create a new post with optional image
@@ -87,6 +88,16 @@ export const toggleLikePost = async (req, res) => {
       post.likes.pull(req.user._id);
     } else {
       post.likes.push(req.user._id);
+
+      // Send like notification if liker is not the post author
+      if (post.user.toString() !== req.user._id.toString()) {
+        await createNotification({
+          type: 'like',
+          recipient: post.user,
+          sender: req.user._id,
+          post: post._id,
+        });
+      }
     }
 
     await post.save();
@@ -123,6 +134,16 @@ export const commentOnPost = async (req, res) => {
       user: req.user._id,
       text: text.trim(),
     });
+
+    // Send comment notification if commenter is not post author
+    if (post.user.toString() !== req.user._id.toString()) {
+      await createNotification({
+        type: 'comment',
+        recipient: post.user,
+        sender: req.user._id,
+        post: post._id,
+      });
+    }
 
     res.status(201).json({ message: 'Comment added', comment });
   } catch (error) {

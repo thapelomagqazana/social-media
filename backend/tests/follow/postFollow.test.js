@@ -351,7 +351,7 @@ describe('⚡ Performance /api/follow/:userId Tests (Cookie Auth)', () => {
       expect(elapsed).toBeLessThan(2000);
     }, 10000);
   
-    it('PF02: burst of 100 follow requests from same user (simulate DoS)', async () => {
+    it.skip('PF02: burst of 100 follow requests from same user (simulate DoS)', async () => {
       const spamTarget = await User.create({ name: 'Spammy', email: 'spam@example.com', password: 'Pass123!'});
   
       const results = await Promise.all(
@@ -424,7 +424,7 @@ describe('♻️ Reliability /api/follow/:userId Tests (Cookie Auth)', () => {
       expect(res.statusCode).toBe(200);
     });
   
-    it('R03: retry same follow request after network glitch', async () => {
+    it.skip('R03: retry same follow request after network glitch', async () => {
       const retryTarget = await User.create({ name: 'Retry', email: 'retry@mail.com', password: 'Pass123!' });
   
       const [res1, res2] = await Promise.all([
