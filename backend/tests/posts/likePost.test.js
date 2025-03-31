@@ -30,11 +30,11 @@ beforeAll(async () => {
 
   const user = await User.create({ name: 'User1', email: 'user1@mail.com', password: 'Pass123!' });
   userId = user._id;
-  userToken = generateToken(user._id);
+  userToken = generateToken(userId);
 
   const admin = await User.create({ name: 'Admin', email: 'admin@mail.com', password: 'Pass123!', role: 'admin' });
   adminId = admin._id;
-  adminToken = generateToken(admin._id);
+  adminToken = generateToken(adminId);
 
   const otherUser = await User.create({ name: 'Other', email: 'other@mail.com', password: 'Pass123!' });
   otherUserToken = generateToken(otherUser._id);

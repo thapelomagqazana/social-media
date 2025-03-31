@@ -18,6 +18,7 @@ import profileRoutes from "./routes/profileRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
+import searchRoutes from "./routes/searchRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -75,6 +76,7 @@ app.use(cors({
 app.use("/api/profile", profileRoutes);
 app.use("/api/follow", followRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/search", searchRoutes);
 app.use("/auth", authRoutes);
 
 // Default route

@@ -1,4 +1,5 @@
 import Post from "../models/Post.js";
+import User from "../models/User.js";
 import Comment from "../models/Comment.js";
 import mongoose from "mongoose";
 import escape from "escape-html";
@@ -126,5 +127,25 @@ export const commentOnPost = async (req, res) => {
     res.status(201).json({ message: 'Comment added', comment });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc    Get newsfeed for logged-in user (posts by followed users)
+ * @route   GET /api/posts/newsfeed
+ * @access  Private
+ */
+export const getNewsfeed = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("following");
+    const followingIds = [...user.following, req.user._id]; // include self
+
+    const posts = await Post.find({ user: { $in: followingIds } })
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ posts });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };

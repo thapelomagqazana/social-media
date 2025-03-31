@@ -51,6 +51,8 @@ const userSchema = new mongoose.Schema(
         enum: ["admin", "user"],
         default: "user",
     },
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     createdAt: {
         type: Date,
         default: Date.now,
