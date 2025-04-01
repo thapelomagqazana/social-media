@@ -4,7 +4,7 @@
  * @description Establishes a connection with MongoDB using Mongoose.
  */
 
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
 /**
  * @function connectDB
@@ -15,9 +15,9 @@ const connectDB = async () => {
   try {
     // Establish the database connection
     const conn = await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true, // Use the new URL parser for MongoDB
-      useUnifiedTopology: true, // Use the new Server Discovery and Monitoring engine
-      maxPoolSize: 100, // Increase pool size for load testing
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      maxPoolSize: 100,
     });
 
     // Log the successful connection
@@ -32,4 +32,4 @@ const connectDB = async () => {
 };
 
 // Export the function to be used in `server.js`
-export default connectDB;
+module.exports = connectDB;

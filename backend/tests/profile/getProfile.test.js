@@ -1,11 +1,11 @@
-import request from 'supertest';
-import mongoose from 'mongoose';
-import app from '../../app';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import User from '../../models/User';
-import Profile from '../../models/Profile';
-import { generateToken } from '../../utils/token';
-import jwt from "jsonwebtoken";
+const request = require('supertest');
+const mongoose = require('mongoose');
+const app = require('../../app');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const User = require('../../models/User');
+const Profile = require('../../models/Profile');
+const { generateToken } = require('../../utils/token');
+const jwt = require('jsonwebtoken');
 
 let mongo;
 let userToken, adminToken, anotherUserToken, userId, adminId, anotherUserId;

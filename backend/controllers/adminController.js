@@ -1,13 +1,13 @@
-import User from '../models/User.js';
-import Post from '../models/Post.js';
-import mongoose from 'mongoose';
+const User = require('../models/User');
+const Post = require('../models/Post');
+const mongoose = require('mongoose');
 
 /**
  * @desc    Ban a user
  * @route   PUT /api/admin/ban/:userId
  * @access  Admin only
  */
-export const banUser = async (req, res) => {
+const banUser = async (req, res) => {
   const { userId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -38,7 +38,7 @@ export const banUser = async (req, res) => {
  * @route   PUT /api/admin/unban/:userId
  * @access  Admin only
  */
-export const unbanUser = async (req, res) => {
+const unbanUser = async (req, res) => {
   const { userId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -48,7 +48,7 @@ export const unbanUser = async (req, res) => {
   if (req.user._id.toString() === userId) {
     return res.status(400).json({ message: "Admins cannot unban themselves" });
   }
-  
+
   try {
     const user = await User.findByIdAndUpdate(
       userId,
@@ -69,7 +69,7 @@ export const unbanUser = async (req, res) => {
  * @route   DELETE /api/admin/posts/:postId
  * @access  Moderator/Admin
  */
-export const deletePostByAdmin = async (req, res) => {
+const deletePostByAdmin = async (req, res) => {
   const { postId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(postId)) {
@@ -84,4 +84,10 @@ export const deletePostByAdmin = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
+};
+
+module.exports = {
+  banUser,
+  unbanUser,
+  deletePostByAdmin,
 };

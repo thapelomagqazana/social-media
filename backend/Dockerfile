@@ -11,8 +11,11 @@ RUN npm install --frozen-lockfile
 # Copy the rest of the application
 COPY . .
 
+# Build the backend bundle using Webpack
+RUN npm run build
+
 # Expose the backend port
 EXPOSE 5000
 
-# Start the server
+# Start the compiled server
 CMD ["npm", "start"]

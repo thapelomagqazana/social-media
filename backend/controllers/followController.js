@@ -1,14 +1,14 @@
-import Follow from "../models/Follow.js";
-import User from "../models/User.js";
-import mongoose from "mongoose";
-import { createNotification } from "../utils/notify.js";
+const Follow = require("../models/Follow");
+const User = require("../models/User");
+const mongoose = require("mongoose");
+const { createNotification } = require("../utils/notify");
 
 /**
  * @desc    Follow a user
  * @route   POST /api/follow/:userId
  * @access  Private
  */
-export const followUser = async (req, res) => {
+const followUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -34,7 +34,6 @@ export const followUser = async (req, res) => {
       following: userId,
     });
 
-    // Trigger follow notification
     await createNotification({
       type: 'follow',
       recipient: userId,
@@ -52,7 +51,7 @@ export const followUser = async (req, res) => {
  * @route   DELETE /api/follow/:userId
  * @access  Private
  */
-export const unfollowUser = async (req, res) => {
+const unfollowUser = async (req, res) => {
   const { userId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -83,24 +82,29 @@ export const unfollowUser = async (req, res) => {
 };
 
 /**
- * @desc    Suggest users to follow (excluding already-followed users & self)
+ * @desc    Suggest users to follow
  * @route   GET /api/follow/suggestions
  * @access  Private
  */
-export const whoToFollow = async (req, res) => {
-    try {
-      const following = await Follow.find({ follower: req.user._id }).select("following");
-      const followingIds = following.map(f => f.following);
-  
-      const suggestions = await User.find({
-        _id: { $nin: [...followingIds, req.user._id] },
-      })
-        .select("name email")
-        .limit(5);
-  
-      res.status(200).json({ suggestions });
-    } catch (err) {
-      res.status(500).json({ message: "Server error", error: err.message });
-    }
+const whoToFollow = async (req, res) => {
+  try {
+    const following = await Follow.find({ follower: req.user._id }).select("following");
+    const followingIds = following.map(f => f.following);
+
+    const suggestions = await User.find({
+      _id: { $nin: [...followingIds, req.user._id] },
+    })
+      .select("name email")
+      .limit(5);
+
+    res.status(200).json({ suggestions });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 };
-  
+
+module.exports = {
+  followUser,
+  unfollowUser,
+  whoToFollow,
+};

@@ -37,8 +37,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await getMe(); // secure endpoint
-        setUser(res.data.user); // Set user from backend
+        const user = await getMe(); // secure endpoint
+        setUser(user); // Set user from backend
       } catch {
         setUser(null); // Not logged in or session expired
       } finally {

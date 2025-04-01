@@ -1,10 +1,10 @@
-import request from 'supertest';
-import mongoose from 'mongoose';
-import app from '../../app.js';
-import User from '../../models/User.js';
-import Post from '../../models/Post.js';
-import { generateToken } from '../../utils/token.js';
-import Comment from '../../models/Comment.js';
+const request = require('supertest');
+const mongoose = require('mongoose');
+const app = require('../../app.js');
+const User = require('../../models/User.js');
+const Post = require('../../models/Post.js');
+const { generateToken } = require('../../utils/token.js');
+const Comment = require('../../models/Comment.js');
 
 let admin, adminToken, user, userPost, adminPost;
 

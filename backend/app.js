@@ -3,24 +3,26 @@
  * @description Initializes middleware, routes, security headers, and logging.
  */
 
-import express from "express";
-import bodyParser from "body-parser";
-import cookieParser from "cookie-parser";
-import compression from "compression";
-import helmet from "helmet";
-import cors from "cors";
-import dotenv from "dotenv";
-import morgan from "morgan"; // HTTP request logger middleware
-import xss from 'xss-clean';
-import fs from "fs";
-import path from "path";
-import profileRoutes from "./routes/profileRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
-import followRoutes from "./routes/followRoutes.js";
-import postRoutes from "./routes/postRoutes.js";
-import searchRoutes from "./routes/searchRoutes.js";
-import notificationRoutes from './routes/notificationRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
+const express = require("express");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+const compression = require("compression");
+const helmet = require("helmet");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const morgan = require("morgan");
+const xss = require("xss-clean");
+const fs = require("fs");
+const path = require("path");
+const multer = require("multer"); // Needed for error handling middleware
+
+const profileRoutes = require("./routes/profileRoutes");
+const authRoutes = require("./routes/authRoutes");
+const followRoutes = require("./routes/followRoutes");
+const postRoutes = require("./routes/postRoutes");
+const searchRoutes = require("./routes/searchRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 // Load environment variables
 dotenv.config();
@@ -95,4 +97,4 @@ app.use((err, req, res, next) => {
 });
 
 
-export default app;
+module.exports = app;

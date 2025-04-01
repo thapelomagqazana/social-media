@@ -1,18 +1,13 @@
-/**
- * @fileoverview Webpack Configuration for Backend
- * @description Bundles and optimizes the backend for production.
- */
+const path = require("path");
+const webpack = require("webpack");
+const nodeExternals = require("webpack-node-externals");
 
-import path from "path";
-import webpack from "webpack";
-import nodeExternals from "webpack-node-externals";
-
-export default {
+module.exports = {
   entry: "./server.js",
   target: "node",
   externals: [nodeExternals()],
   output: {
-    path: path.resolve("dist"),
+    path: path.resolve(__dirname, "dist"),
     filename: "server.bundle.js",
   },
   mode: "development",
@@ -23,11 +18,16 @@ export default {
         exclude: /node_modules/,
         use: {
           loader: "babel-loader",
+          options: {
+            sourceType: "unambiguous",
+            presets: ["@babel/preset-env"],
+          },
         },
       },
     ],
   },
-  plugins: [
-    new webpack.HotModuleReplacementPlugin(),
-  ],
+  resolve: {
+    extensions: [".js"],
+  },
+  plugins: [new webpack.HotModuleReplacementPlugin()],
 };

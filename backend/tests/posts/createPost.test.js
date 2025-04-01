@@ -1,12 +1,12 @@
-import request from 'supertest';
-import mongoose from 'mongoose';
-import app from '../../app.js';
-import User from '../../models/User.js';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import Post from '../../models/Post.js';
-import { generateToken } from '../../utils/token.js';
-import path from 'path';
-import fs from 'fs';
+const request = require('supertest');
+const mongoose = require('mongoose');
+const app = require('../../app.js');
+const User = require('../../models/User.js');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const Post = require('../../models/Post.js');
+const { generateToken } = require('../../utils/token.js');
+const path = require('path');
+const fs = require('fs');
 
 let mongoServer;
 let userToken, userId;

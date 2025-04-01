@@ -1,12 +1,12 @@
-import Post from "../models/Post.js";
-import User from "../models/User.js";
+const Post = require("../models/Post");
+const User = require("../models/User");
 
 /**
  * @desc    Search users or posts
  * @route   GET /api/search?q=term&type=users|posts
  * @access  Public
  */
-export const search = async (req, res) => {
+const search = async (req, res) => {
   const { q, type } = req.query;
 
   if (!q || q.trim() === "") {
@@ -33,3 +33,5 @@ export const search = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+module.exports = { search };

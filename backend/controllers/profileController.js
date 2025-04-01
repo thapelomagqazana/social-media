@@ -1,29 +1,26 @@
-import Profile from "../models/Profile.js";
-import escape from 'escape-html';
-import mongoose from "mongoose";
+const Profile = require("../models/Profile");
+const escape = require("escape-html");
+const mongoose = require("mongoose");
 
 /**
  * @desc    Get a user's profile
  * @route   GET /api/profile/:userId
  * @access  Private
  */
-export const getProfile = async (req, res) => {
+const getProfile = async (req, res) => {
   const { userId } = req.params;
 
   try {
-    // Validate userId format
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    // Find profile and populate user
     const profile = await Profile.findOne({ user: userId }).populate("user", "email name role");
 
     if (!profile) {
       return res.status(404).json({ message: "Profile not found" });
     }
 
-    // Escape user-generated fields
     const safeProfile = {
       _id: profile._id,
       user: profile.user,
@@ -48,7 +45,7 @@ export const getProfile = async (req, res) => {
  * @route   PUT /api/profile/:userId
  * @access  Private
  */
-export const updateProfile = async (req, res) => {
+const updateProfile = async (req, res) => {
   const { userId } = req.params;
   const { username, bio, profilePicture, interests } = req.body;
 
@@ -67,30 +64,25 @@ export const updateProfile = async (req, res) => {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    // Ensure only the owner or admin can update
     if (req.user._id.toString() !== userId && req.user.role !== "admin") {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    // Find or create profile
     let profile = await Profile.findOne({ user: userId });
     if (!profile) {
       profile = new Profile({ user: userId });
     }
 
-    // Optional fields update
     if (Object.prototype.hasOwnProperty.call(req.body, "username")) {
       profile.username = escape(username?.trim() || "");
     }
-    
+
     if (Object.prototype.hasOwnProperty.call(req.body, "bio")) {
       profile.bio = escape(bio?.trim() || "");
     }
 
-    
     if (Object.prototype.hasOwnProperty.call(req.body, "interests")) {
       try {
-        // Accept JSON string or array directly
         const parsedInterests =
           typeof interests === "string" ? JSON.parse(interests) : interests;
 
@@ -100,13 +92,12 @@ export const updateProfile = async (req, res) => {
 
         profile.interests = parsedInterests
           .map((interest) => escape(interest.trim()))
-          .filter(Boolean); // remove empty strings
+          .filter(Boolean);
       } catch {
         return res.status(400).json({ message: "Invalid interests format" });
       }
     }
 
-    // Handle profile picture (via req.file or direct link)
     if (req.file) {
       profile.profilePicture = `/uploads/${req.file.filename}`;
     } else if (Object.prototype.hasOwnProperty.call(req.body, "profilePicture")) {
@@ -129,3 +120,5 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+module.exports = { getProfile, updateProfile };

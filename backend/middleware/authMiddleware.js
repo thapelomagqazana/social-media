@@ -4,9 +4,9 @@
  * @description Protects routes by verifying JWT tokens and authorizing users.
  */
 
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-import User from "../models/User.js";
+const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
+const User = require("../models/User");
 
 // Load environment variables
 dotenv.config();
@@ -15,7 +15,7 @@ dotenv.config();
  * @function protect
  * @description Middleware to check if user is authenticated
  */
-export const protect = async (req, res, next) => {
+const protect = async (req, res, next) => {
   const token = req.cookies?.token;
 
   if (!token)
@@ -40,12 +40,12 @@ export const protect = async (req, res, next) => {
  * @function isAdmin
  * @description Middleware to allow only admin users
  */
-export const isAdmin = (req, res, next) => {
+const isAdmin = (req, res, next) => {
   if (req.user && req.user.role === "admin") return next();
   res.status(403).json({ message: "Access denied: Admins only" });
 };
 
-export const requireRole = (...roles) => {
+const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
@@ -54,12 +54,16 @@ export const requireRole = (...roles) => {
   };
 };
 
-export const checkBanned = (req, res, next) => {
+const checkBanned = (req, res, next) => {
   if (req.user.isBanned) {
     return res.status(403).json({ message: 'Your account has been banned' });
   }
   next();
 };
 
-  
-  
+module.exports = {
+  protect,
+  isAdmin,
+  requireRole,
+  checkBanned,
+};

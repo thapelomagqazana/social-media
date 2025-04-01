@@ -1,10 +1,15 @@
-import express from 'express';
-import {
+/**
+ * @fileoverview Admin Routes
+ * @description Defines routes for banning users and deleting posts by admin or moderator.
+ */
+
+const express = require('express');
+const {
   banUser,
   unbanUser,
   deletePostByAdmin,
-} from '../controllers/adminController.js';
-import { protect, requireRole } from '../middleware/authMiddleware.js';
+} = require('../controllers/adminController.js');
+const { protect, requireRole } = require('../middleware/authMiddleware.js');
 
 const router = express.Router();
 
@@ -18,4 +23,4 @@ router.put('/unban/:userId', requireRole('admin'), unbanUser);
 // Admin or Moderator
 router.delete('/posts/:postId', requireRole('admin', 'moderator'), deletePostByAdmin);
 
-export default router;
+module.exports = router;

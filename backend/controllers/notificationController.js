@@ -1,10 +1,10 @@
-import Notification from '../models/Notification.js';
-import mongoose from 'mongoose';
+const Notification = require('../models/Notification');
+const mongoose = require('mongoose');
 
 /**
  * Get notifications for the authenticated user
  */
-export const getNotifications = async (req, res) => {
+const getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ recipient: req.user._id })
       .populate('sender', 'name email')
@@ -20,15 +20,18 @@ export const getNotifications = async (req, res) => {
 /**
  * Mark a notification as read
  */
-export const markNotificationRead = async (req, res) => {
+const markNotificationRead = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return res.status(400).json({ message: 'Invalid Notification ID' });
+      return res.status(400).json({ message: 'Invalid Notification ID' });
     }
+
     const notification = await Notification.findById(req.params.id);
     if (!notification) return res.status(404).json({ message: 'Not found' });
-    if (notification.recipient.toString() !== req.user._id.toString())
+
+    if (notification.recipient.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Forbidden' });
+    }
 
     notification.read = true;
     await notification.save();
@@ -37,4 +40,9 @@ export const markNotificationRead = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
+};
+
+module.exports = {
+  getNotifications,
+  markNotificationRead,
 };

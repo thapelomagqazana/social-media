@@ -11,8 +11,6 @@ import SignUp from "./pages/SignUp";
 import SignInPage from './pages/SignInPage';
 import ProfileSetup from "./pages/ProfileSetup";
 import Home from "./pages/Home";
-// import ViewProfilePage from "./pages/ViewProfilePage";
-// import EditUserPage from './pages/EditUserPage';
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const AppRoutes = () => {
@@ -29,8 +27,6 @@ const AppRoutes = () => {
                     <Route element={<ProtectedRoute />}>
                         <Route path="/setup/:userId" element={<ProfileSetup />} />
                         <Route path="/home" element={<Home />} />
-                        {/* <Route path="/profile/:userId" element={<ViewProfilePage />} />
-                        <Route path="/profile/edit/:userId" element={<EditUserPage />} /> */}
                     </Route>
                 </Routes>
             </main>

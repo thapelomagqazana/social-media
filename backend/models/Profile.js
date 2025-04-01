@@ -3,7 +3,7 @@
  * Associates extended profile details with a user
  */
 
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const ProfileSchema = new mongoose.Schema(
   {
@@ -45,4 +45,4 @@ const ProfileSchema = new mongoose.Schema(
 );
 
 const Profile = mongoose.model("Profile", ProfileSchema);
-export default Profile;
+module.exports = Profile;

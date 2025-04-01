@@ -1,5 +1,5 @@
-import multer from "multer";
-import path from "path";
+const multer = require("multer");
+const path = require("path");
 
 // Allowed file types
 const allowedTypes = /jpeg|jpg|png|gif/;
@@ -24,8 +24,10 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-export const upload = multer({
+const upload = multer({
   storage,
   fileFilter,
   limits: { fileSize: 2 * 1024 * 1024 } // Optional: Max 2MB
 });
+
+module.exports = { upload };

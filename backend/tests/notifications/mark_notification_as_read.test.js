@@ -1,10 +1,10 @@
-import request from 'supertest';
-import mongoose from 'mongoose';
-import app from '../../app.js';
-import User from '../../models/User.js';
-import Notification from '../../models/Notification.js';
-import { generateToken } from '../../utils/token.js';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+const request = require('supertest');
+const mongoose = require('mongoose');
+const app = require('../../app.js');
+const User = require('../../models/User.js');
+const Notification = require('../../models/Notification.js');
+const { generateToken } = require('../../utils/token.js');
+const { MongoMemoryServer } = require('mongodb-memory-server');
 
 let mongoServer;
 let user, userToken, notification;

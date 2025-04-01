@@ -4,8 +4,8 @@
  * @description Defines the user schema, handles password encryption, and provides authentication methods.
  */
 
-import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 /**
  * @constant userSchema
@@ -37,10 +37,7 @@ const userSchema = new mongoose.Schema(
       minlength: [8, "Password must be at least 8 characters long"],
       validate: {
         validator: function (value) {
-          // Regex for a strong password: at least one uppercase, one lowercase, one digit, and one special character
-          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])[A-Za-z\d@$!%*?&^#()_+\-=]{8,}$/.test(
-            value
-          );
+          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])[A-Za-z\d@$!%*?&^#()_+\-=]{8,}$/.test(value);
         },
         message:
           "Password must have at least one uppercase letter, one lowercase letter, one number, and one special character.",
@@ -54,28 +51,27 @@ const userSchema = new mongoose.Schema(
     isBanned: {
       type: Boolean,
       default: false,
-    },    
+    },
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     createdAt: {
-        type: Date,
-        default: Date.now,
-        },
+      type: Date,
+      default: Date.now,
     },
-    { timestamps: true }
+  },
+  { timestamps: true }
 );
 
 /**
  * @middleware Pre-save Hook
  * @description Automatically hashes the password before saving a user document.
- * @param {Function} next - Express next function to continue request processing.
  */
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next(); // Skip hashing if password is not modified
+  if (!this.isModified("password")) return next();
 
   try {
-    const salt = await bcrypt.genSalt(10); // Generate salt
-    this.password = await bcrypt.hash(this.password, salt); // Hash password
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
     next(error);
@@ -85,8 +81,6 @@ userSchema.pre("save", async function (next) {
 /**
  * @method matchPassword
  * @description Compares entered password with the stored hashed password.
- * @param {string} enteredPassword - The password provided by the user.
- * @returns {Promise<boolean>} Returns true if passwords match, false otherwise.
  */
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
@@ -94,5 +88,4 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 
 userSchema.index({ email: 1 }, { unique: true });
 
-// Export the User model
-export default mongoose.model("User", userSchema);
+module.exports = mongoose.model("User", userSchema);

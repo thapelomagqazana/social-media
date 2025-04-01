@@ -3,15 +3,15 @@
  * @module controllers/authController
  * @description Handles user registration, login, and logout using JWT and cookies.
  */
-import User from "../models/User.js";
-import mongoose from "mongoose";
-import { generateToken } from "../utils/token.js";
+const User = require("../models/User");
+const mongoose = require("mongoose");
+const { generateToken } = require("../utils/token");
 
 /**
  * @function signup
  * @description Registers a new user and sets a token cookie
  */
-export const signup = async (req, res) => {
+const signup = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
@@ -47,7 +47,7 @@ export const signup = async (req, res) => {
     if (err.code === 11000) {
       return res.status(400).json({ message: "Email already registered" });
     }
-    // Handle Mongoose validation errors
+
     if (err instanceof mongoose.Error.ValidationError) {
       const messages = Object.values(err.errors).map((e) => e.message);
       return res.status(400).json({ message: messages.join(". ") });
@@ -61,15 +61,13 @@ export const signup = async (req, res) => {
  * @function signin
  * @description Authenticates a user and issues a JWT cookie
  */
-export const signin = async (req, res) => {
+const signin = async (req, res) => {
   const { email, password } = req.body;
 
-  // Validate presence
   if (!email || !password) {
     return res.status(400).json({ message: !email ? "Email is required" : "Password is required" });
   }
 
-  // Validate format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email.trim())) {
     return res.status(400).json({ message: "Please enter a valid email address" });
@@ -107,7 +105,7 @@ export const signin = async (req, res) => {
  * @function signout
  * @description Clears the JWT cookie to log out the user
  */
-export const signout = (req, res) => {
+const signout = (req, res) => {
   res.clearCookie("token");
   res.status(200).json({ message: "Logged out" });
 };
@@ -117,7 +115,7 @@ export const signout = (req, res) => {
  * @route   GET /auth/me
  * @access  Private
  */
-export const getMe = async (req, res) => {
+const getMe = async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: 'Unauthorized, user not found' });
@@ -132,4 +130,11 @@ export const getMe = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
+};
+
+module.exports = {
+  signup,
+  signin,
+  signout,
+  getMe,
 };

@@ -1,17 +1,21 @@
-import { useState, useEffect } from "react";
+import { useAuth, AuthProvider } from "./context/AuthContext";
 import FullScreenLoader from "./components/FullScreenLoader";
 import AppRoutes from "./routes";
 
+const AppContent = () => {
+  const { isLoading } = useAuth();
+
+  if (isLoading) return <FullScreenLoader />;
+
+  return <AppRoutes />;
+};
+
 const App = () => {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate loading or check auth
-    const timer = setTimeout(() => setLoading(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  return loading ? <FullScreenLoader /> : <AppRoutes />;
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
 };
 
 export default App;

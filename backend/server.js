@@ -2,11 +2,12 @@
  * @fileoverview Server Entry Point
  * @description Starts the Express server after connecting to MongoDB.
  */
-import http from 'http';
-import { Server } from 'socket.io';
-import dotenv from "dotenv";
-import app from "./app.js";
-import connectDB from "./config/db.js";
+
+const http = require('http');
+const { Server } = require('socket.io');
+const dotenv = require('dotenv');
+const app = require('./app');
+const connectDB = require('./config/db');
 
 // Load environment variables
 dotenv.config();
@@ -27,4 +28,4 @@ io.on('connection', (socket) => {
 connectDB();
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

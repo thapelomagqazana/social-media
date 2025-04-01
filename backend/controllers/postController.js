@@ -1,25 +1,25 @@
-import Post from "../models/Post.js";
-import User from "../models/User.js";
-import Comment from "../models/Comment.js";
-import mongoose from "mongoose";
-import escape from "escape-html";
-import { createNotification } from "../utils/notify.js";
+const Post = require("../models/Post");
+const User = require("../models/User");
+const Comment = require("../models/Comment");
+const mongoose = require("mongoose");
+const escape = require("escape-html");
+const { createNotification } = require("../utils/notify");
 
 /**
  * @desc    Create a new post with optional image
  * @route   POST /api/posts
  * @access  Private
  */
-export const createPost = async (req, res) => {
+const createPost = async (req, res) => {
   try {
     const { text } = req.body;
     const image = req.file ? `/uploads/${req.file.filename}` : "";
     const trimmedText = text?.trim();
 
     if (!trimmedText && !image) {
-        return res.status(400).json({ message: "Post must contain text or image" });
+      return res.status(400).json({ message: "Post must contain text or image" });
     }
-    
+
     const post = await Post.create({
       user: req.user._id,
       text: escape(text || ""),
@@ -37,31 +37,30 @@ export const createPost = async (req, res) => {
  * @route   DELETE /api/posts/:postId
  * @access  Private
  */
-export const deletePost = async (req, res) => {
+const deletePost = async (req, res) => {
   const { postId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(postId)) {
-    return res.status(400).json({ message: 'Invalid post ID' });
+    return res.status(400).json({ message: "Invalid post ID" });
   }
 
   try {
     const post = await Post.findById(postId);
-
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+    if (!post) return res.status(404).json({ message: "Post not found" });
 
     const isOwner = post.user.toString() === req.user._id.toString();
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = req.user.role === "admin";
 
     if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: 'Forbidden: Not your post' });
+      return res.status(403).json({ message: "Forbidden: Not your post" });
     }
 
     await Comment.deleteMany({ post: post._id });
     await post.deleteOne();
 
-    res.status(200).json({ message: 'Post and related comments deleted' });
+    res.status(200).json({ message: "Post and related comments deleted" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -70,17 +69,16 @@ export const deletePost = async (req, res) => {
  * @route   PUT /api/posts/:postId/like
  * @access  Private
  */
-export const toggleLikePost = async (req, res) => {
+const toggleLikePost = async (req, res) => {
   const { postId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(postId)) {
-    return res.status(400).json({ message: 'Invalid post ID' });
+    return res.status(400).json({ message: "Invalid post ID" });
   }
 
   try {
     const post = await Post.findById(postId);
-
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+    if (!post) return res.status(404).json({ message: "Post not found" });
 
     const liked = post.likes.includes(req.user._id);
 
@@ -89,10 +87,9 @@ export const toggleLikePost = async (req, res) => {
     } else {
       post.likes.push(req.user._id);
 
-      // Send like notification if liker is not the post author
       if (post.user.toString() !== req.user._id.toString()) {
         await createNotification({
-          type: 'like',
+          type: "like",
           recipient: post.user,
           sender: req.user._id,
           post: post._id,
@@ -101,9 +98,9 @@ export const toggleLikePost = async (req, res) => {
     }
 
     await post.save();
-    res.status(200).json({ message: liked ? 'Unliked post' : 'Liked post', post });
+    res.status(200).json({ message: liked ? "Unliked post" : "Liked post", post });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -112,22 +109,21 @@ export const toggleLikePost = async (req, res) => {
  * @route   POST /api/posts/:postId/comment
  * @access  Private
  */
-export const commentOnPost = async (req, res) => {
+const commentOnPost = async (req, res) => {
   const { postId } = req.params;
   const { text } = req.body;
 
   if (!mongoose.Types.ObjectId.isValid(postId)) {
-    return res.status(400).json({ message: 'Invalid post ID' });
+    return res.status(400).json({ message: "Invalid post ID" });
   }
 
   if (!text?.trim()) {
-    return res.status(400).json({ message: 'Comment text required' });
+    return res.status(400).json({ message: "Comment text required" });
   }
 
   try {
     const post = await Post.findById(postId);
-
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+    if (!post) return res.status(404).json({ message: "Post not found" });
 
     const comment = await Comment.create({
       post: postId,
@@ -135,19 +131,18 @@ export const commentOnPost = async (req, res) => {
       text: text.trim(),
     });
 
-    // Send comment notification if commenter is not post author
     if (post.user.toString() !== req.user._id.toString()) {
       await createNotification({
-        type: 'comment',
+        type: "comment",
         recipient: post.user,
         sender: req.user._id,
         post: post._id,
       });
     }
 
-    res.status(201).json({ message: 'Comment added', comment });
+    res.status(201).json({ message: "Comment added", comment });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -156,10 +151,10 @@ export const commentOnPost = async (req, res) => {
  * @route   GET /api/posts/newsfeed
  * @access  Private
  */
-export const getNewsfeed = async (req, res) => {
+const getNewsfeed = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("following");
-    const followingIds = [...user.following, req.user._id]; // include self
+    const followingIds = [...user.following, req.user._id];
 
     const posts = await Post.find({ user: { $in: followingIds } })
       .populate("user", "name email")
@@ -169,4 +164,12 @@ export const getNewsfeed = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
+};
+
+module.exports = {
+  createPost,
+  deletePost,
+  toggleLikePost,
+  commentOnPost,
+  getNewsfeed,
 };
