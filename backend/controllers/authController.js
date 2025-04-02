@@ -89,12 +89,15 @@ const signin = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
+    const profile = await Profile.findOne({ user: user._id });
+
     res.status(200).json({
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        profile: profile || null,
       },
     });
   } catch (err) {
@@ -121,7 +124,6 @@ const getMe = async (req, res) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Unauthorized, user not found' });
     }
-
     const profile = await Profile.findOne({ user: req.user._id });
 
     res.status(200).json({
