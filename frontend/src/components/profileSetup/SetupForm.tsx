@@ -11,6 +11,8 @@ import { Button, CircularProgress, Snackbar, Alert } from "@mui/material";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { updateProfile } from "../../services/profileService";
+import { useAuth } from "../../context/AuthContext";
+import { getMe } from "../../services/authService";
 import { useParams } from "react-router-dom";
 
 const validationSchema = Yup.object().shape({
@@ -44,6 +46,7 @@ const SetupForm = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
 
+  const { setUser } = useAuth();
   const handleClose = () => setSnackbar({ ...snackbar, open: false });
 
   const handleSubmit = async (values: typeof initialValues) => {
@@ -56,6 +59,8 @@ const SetupForm = () => {
       formData.append("file", values.avatar!);
 
       await updateProfile(userId!, formData);
+      const user = await getMe(); // secure endpoint
+      setUser(user); // Set user from backend
       setSnackbar({ message: `Welcome to ${import.meta.env.VITE_APP_NAME}!`, severity: "success", open: true });
 
       setTimeout(() => {

@@ -32,6 +32,6 @@ export const getMe = async () => {
 };
 
 export const signOut = async () => {
-  const response = await api.post("/auth/logout");
+  const response = await api.get("/auth/signout");
   return response.data;
 };

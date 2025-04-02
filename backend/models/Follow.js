@@ -1,8 +1,40 @@
+/**
+ * @fileoverview Follow Model
+ * @module models/Follow
+ * @description Schema representing follow relationships between users.
+ */
+
 const mongoose = require("mongoose");
 
 /**
- * @description Schema representing follow relationships between users.
+ * @swagger
+ * components:
+ *   schemas:
+ *     Follow:
+ *       type: object
+ *       required:
+ *         - follower
+ *         - following
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Unique identifier for the follow relationship
+ *         follower:
+ *           type: string
+ *           description: The user who is following another user
+ *         following:
+ *           type: string
+ *           description: The user who is being followed
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Timestamp of when the follow was created
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Timestamp of the last follow update
  */
+
 const followSchema = new mongoose.Schema(
   {
     follower: {
@@ -19,6 +51,7 @@ const followSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-followSchema.index({ follower: 1, following: 1 }, { unique: true }); // Prevent duplicates
+// Prevent duplicate follow entries
+followSchema.index({ follower: 1, following: 1 }, { unique: true });
 
 module.exports = mongoose.model("Follow", followSchema);

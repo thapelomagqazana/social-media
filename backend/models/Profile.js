@@ -1,9 +1,47 @@
 /**
- * Profile Model
- * Associates extended profile details with a user
+ * @fileoverview Profile Model
+ * @module models/Profile
+ * @description Associates extended profile details with a user
  */
 
 const mongoose = require("mongoose");
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Profile:
+ *       type: object
+ *       required:
+ *         - user
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Unique identifier for the profile
+ *         user:
+ *           type: string
+ *           description: User ID (reference to User collection)
+ *         username:
+ *           type: string
+ *           description: Unique public username
+ *         bio:
+ *           type: string
+ *           description: Short biography
+ *         profilePicture:
+ *           type: string
+ *           description: URL or path to profile picture
+ *         interests:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: List of user interests
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
 
 const ProfileSchema = new mongoose.Schema(
   {
@@ -11,29 +49,25 @@ const ProfileSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true, // Each user has one profile
+      unique: true,
     },
-
     username: {
       type: String,
       trim: true,
       lowercase: true,
       unique: true,
-      sparse: true, // allow null/undefined
+      sparse: true,
       minlength: 3,
       maxlength: 30,
     },
-
     bio: {
       type: String,
       maxlength: 300,
     },
-
     profilePicture: {
-      type: String, // path or external URL
-      default: "",  // optional
+      type: String,
+      default: "",
     },
-
     interests: {
       type: [String],
       default: [],

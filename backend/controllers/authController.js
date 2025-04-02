@@ -4,6 +4,7 @@
  * @description Handles user registration, login, and logout using JWT and cookies.
  */
 const User = require("../models/User");
+const Profile = require("../models/Profile");
 const mongoose = require("mongoose");
 const { generateToken } = require("../utils/token");
 
@@ -121,11 +122,14 @@ const getMe = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized, user not found' });
     }
 
+    const profile = await Profile.findOne({ user: req.user._id });
+
     res.status(200).json({
       _id: req.user._id,
       name: req.user.name,
       email: req.user.email,
       role: req.user.role,
+      profile: profile || null,
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

@@ -8,9 +8,55 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 /**
- * @constant userSchema
- * @description Defines the structure of the User document in MongoDB.
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *         - password
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Unique identifier for the user
+ *         name:
+ *           type: string
+ *           description: Full name of the user
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: User's email address (unique)
+ *         password:
+ *           type: string
+ *           format: password
+ *           description: Hashed password (not exposed in API)
+ *         role:
+ *           type: string
+ *           enum: [user, moderator, admin]
+ *           default: user
+ *         isBanned:
+ *           type: boolean
+ *           default: false
+ *         following:
+ *           type: array
+ *           items:
+ *             type: string
+ *             description: User ID that this user is following
+ *         followers:
+ *           type: array
+ *           items:
+ *             type: string
+ *             description: User ID that follows this user
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
  */
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -27,7 +73,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [
         /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-        'Please enter a valid email address'
+        'Please enter a valid email address',
       ],
       maxlength: [255, "Email must be at most 255 characters long"],
     },
@@ -62,10 +108,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-/**
- * @middleware Pre-save Hook
- * @description Automatically hashes the password before saving a user document.
- */
+// Pre-save hook to hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
@@ -79,13 +122,15 @@ userSchema.pre("save", async function (next) {
 });
 
 /**
- * @method matchPassword
- * @description Compares entered password with the stored hashed password.
+ * Compare entered password with stored hashed password
+ * @param {string} enteredPassword
+ * @returns {Promise<boolean>}
  */
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Ensure unique index on email
 userSchema.index({ email: 1 }, { unique: true });
 
 module.exports = mongoose.model("User", userSchema);

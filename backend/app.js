@@ -15,6 +15,9 @@ const xss = require("xss-clean");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer"); // Needed for error handling middleware
+const swaggerUi = require('swagger-ui-express');
+const swaggerJSDoc = require('swagger-jsdoc');
+const swaggerOptions = require('./config/swagger');
 
 const profileRoutes = require("./routes/profileRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -77,6 +80,9 @@ app.use(cors({
   
 
 // Routes
+const swaggerSpec = swaggerJSDoc(swaggerOptions);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/profile", profileRoutes);
 app.use("/api/follow", followRoutes);
 app.use("/api/posts", postRoutes);

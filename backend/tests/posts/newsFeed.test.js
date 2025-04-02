@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const app = require('../../app');
 const User = require('../../models/User');
 const Post = require('../../models/Post');
+const Follow = require("../../models/Follow");
 const { generateToken } = require('../../utils/token');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 
@@ -82,6 +83,50 @@ describe('✅ Positive Cases', () => {
       expect(post.user).toHaveProperty('email');
     }
   });
+
+  it('1. Returns first page of newsfeed for authenticated user', async () => {
+    const res = await request(app)
+      .get('/api/posts/newsfeed')
+      .set('Cookie', `token=${userToken}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('posts');
+  });
+
+  it('2. Returns custom limit and page correctly', async () => {
+    const res = await request(app)
+      .get('/api/posts/newsfeed?page=2&limit=5')
+      .set('Cookie', `token=${userToken}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.posts.length).toBeLessThanOrEqual(5);
+  });
+
+  it('3. Authenticated user sees own posts', async () => {
+    await Post.create({ user: user._id, text: 'My own post' });
+    const res = await request(app)
+      .get('/api/posts/newsfeed')
+      .set('Cookie', `token=${userToken}`);
+    expect(res.body.posts.some(p => p.text === 'My own post')).toBe(true);
+  });
+
+  it('4. User sees followed users posts', async () => {
+    const followed = await User.create({ name: 'Followed', email: 'f@example.com', password: 'Pass123!' });
+    await Follow.create({ follower: user._id, following: followed._id });
+    await Post.create({ user: followed._id, text: 'Followed user post' });
+    const res = await request(app)
+      .get('/api/posts/newsfeed')
+      .set('Cookie', `token=${userToken}`);
+    expect(res.body.posts.some(p => p.text === 'Followed user post')).toBe(true);
+  });
+
+  it('5. Posts are ordered by newest first', async () => {
+    const res = await request(app)
+      .get('/api/posts/newsfeed')
+      .set('Cookie', `token=${userToken}`);
+    const dates = res.body.posts.map(p => new Date(p.createdAt));
+    const sorted = [...dates].sort((a, b) => b - a);
+    expect(dates).toEqual(sorted);
+  });
+
 });
 
 describe('❌ Negative Cases', () => {
@@ -121,6 +166,20 @@ describe('❌ Negative Cases', () => {
       .set('Cookie', [`token=${userToken}`]);
   
     expect(res.statusCode).toBe(200); // empty feed is OK
+  });
+
+  it('9. Non-numeric page param returns 400 or default', async () => {
+    const res = await request(app)
+      .get('/api/posts/newsfeed?page=abc')
+      .set('Cookie', `token=${userToken}`);
+    expect(res.statusCode).toBeLessThanOrEqual(400);
+  });
+
+  it('10. Non-numeric limit param returns 400 or default', async () => {
+    const res = await request(app)
+      .get('/api/posts/newsfeed?limit=xyz')
+      .set('Cookie', `token=${userToken}`);
+    expect(res.statusCode).toBeLessThanOrEqual(400);
   });
 });
 
@@ -194,6 +253,35 @@ describe('🔳 GET /api/posts/newsfeed - Edge Cases', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.posts[0].text).toMatch(/🎉|🚀|🔥|\*\*/);
     });
+
+    it('11. Page 0 returns default or empty', async () => {
+      const res = await request(app)
+        .get('/api/posts/newsfeed?page=0')
+        .set('Cookie', `token=${userToken}`);
+      expect(res.statusCode).toBe(200);
+    });
+  
+    it('12. Limit 0 returns empty', async () => {
+      const res = await request(app)
+        .get('/api/posts/newsfeed?limit=0')
+        .set('Cookie', `token=${userToken}`);
+      
+      expect(res.body.message).toBe("Limit must be between 1 and 100");
+    });
+  
+    it('13. Page exceeds available returns empty', async () => {
+      const res = await request(app)
+        .get('/api/posts/newsfeed?page=999')
+        .set('Cookie', `token=${userToken}`);
+      expect(res.body.posts.length).toBe(0);
+    });
+  
+    it('14. Large limit is capped or respected', async () => {
+      const res = await request(app)
+        .get('/api/posts/newsfeed?limit=999')
+        .set('Cookie', `token=${userToken}`);
+      expect(res.body.message).toBe("Limit must be between 1 and 100");
+    });
 });
 
 describe('🔲 GET /api/posts/newsfeed - Corner Cases', () => {
@@ -253,6 +341,47 @@ describe('🔲 GET /api/posts/newsfeed - Corner Cases', () => {
   
       const includesOwnPost = res.body.posts.some(p => p.user._id === user._id.toString());
       expect(includesOwnPost).toBe(true);
+    });
+
+    it('15. Exactly limit posts available returns correct count', async () => {
+      await Post.deleteMany({});
+      for (let i = 0; i < 10; i++) {
+        await Post.create({ user: user._id, text: `Post ${i}` });
+      }
+      const res = await request(app)
+        .get('/api/posts/newsfeed?limit=10')
+        .set('Cookie', `token=${userToken}`);
+      expect(res.body.posts.length).toBe(10);
+    });
+  
+    it('16. User with no posts or follows gets empty', async () => {
+      const lonely = await User.create({ name: 'Lonely', email: 'lonely@example.com', password: 'Pass123!' });
+      const lonelyToken = generateToken(lonely._id);
+      const res = await request(app)
+        .get('/api/posts/newsfeed')
+        .set('Cookie', `token=${lonelyToken}`);
+      expect(res.body.posts.length).toBe(0);
+    });
+  
+    it('20. JWT tampering should return 401', async () => {
+      const tamperedToken = userToken.split('.')[0] + '.' + userToken.split('.')[1] + '.invalidsig';
+      const res = await request(app)
+        .get('/api/posts/newsfeed')
+        .set('Cookie', `token=${tamperedToken}`);
+      expect(res.statusCode).toBe(401);
+    });
+  
+    it('21. Mongo injection in query param is rejected', async () => {
+      const res = await request(app)
+        .get('/api/posts/newsfeed?page[$gt]=1')
+        .set('Cookie', `token=${userToken}`);
+      expect(res.statusCode).toBeLessThanOrEqual(400);
+    });
+  
+    it('22. Token in query string is rejected', async () => {
+      const res = await request(app)
+        .get(`/api/posts/newsfeed?token=${userToken}`);
+      expect(res.statusCode).toBe(401);
     });
 });
 

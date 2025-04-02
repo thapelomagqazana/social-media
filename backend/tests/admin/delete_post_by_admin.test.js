@@ -1,5 +1,6 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
+const { MongoMemoryServer } = require('mongodb-memory-server');
 const app = require('../../app.js');
 const User = require('../../models/User.js');
 const Post = require('../../models/Post.js');
@@ -7,9 +8,11 @@ const { generateToken } = require('../../utils/token.js');
 const Comment = require('../../models/Comment.js');
 
 let admin, adminToken, user, userPost, adminPost;
+let mongoServer;
 
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost/test');
+  mongoServer = await MongoMemoryServer.create();
+  await mongoose.connect(mongoServer.getUri());
 
   admin = await User.create({
     name: 'Admin',
@@ -34,8 +37,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await mongoose.connection.db.dropDatabase();
   await mongoose.disconnect();
+  await mongoServer.stop();
 });
 
 describe('✅ Positive Test Cases', () => {

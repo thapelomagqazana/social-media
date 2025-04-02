@@ -1,5 +1,5 @@
 const Post = require("../models/Post");
-const User = require("../models/User");
+const Follow = require("../models/Follow");
 const Comment = require("../models/Comment");
 const mongoose = require("mongoose");
 const escape = require("escape-html");
@@ -147,22 +147,51 @@ const commentOnPost = async (req, res) => {
 };
 
 /**
- * @desc    Get newsfeed for logged-in user (posts by followed users)
- * @route   GET /api/posts/newsfeed
+ * @desc    Fetch paginated newsfeed for authenticated user
+ * @route   GET /api/posts/newsfeed?page=1&limit=10
  * @access  Private
  */
 const getNewsfeed = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("following");
-    const followingIds = [...user.following, req.user._id];
+    let page = parseInt(req.query.page ?? "1");
+    let limit = parseInt(req.query.limit ?? "10");
 
+    // Sanitize inputs
+    if (isNaN(page) || page < 1) page = 1;
+    if (isNaN(limit) || limit < 1 || limit > 100)
+      return res.status(400).json({ message: "Limit must be between 1 and 100" });
+
+    const skip = (page - 1) * limit;
+
+    // Get followed user IDs
+    const followDocs = await Follow.find({ follower: req.user._id }).select("following");
+    const followingIds = followDocs.map((doc) => doc.following.toString());
+
+    // Include user's own posts too
+    followingIds.push(req.user._id.toString());
+
+    // Count total posts
+    const totalPosts = await Post.countDocuments({ user: { $in: followingIds } });
+
+    // Fetch paginated posts
     const posts = await Post.find({ user: { $in: followingIds } })
-      .populate("user", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("user", "name email profile");
 
-    res.status(200).json({ posts });
+    const totalPages = Math.ceil(totalPosts / limit);
+    const hasMore = page < totalPages;
+
+    return res.status(200).json({
+      page,
+      totalPages,
+      totalPosts,
+      hasMore, // For frontend infinite scroll logic
+      posts,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 

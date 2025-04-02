@@ -18,7 +18,14 @@ interface User {
   name: string;
   email: string;
   role: string;
+  profile: {
+    bio: string;
+    interests: string[];
+    profilePicture: string;
+    username: string;
+  };
 }
+
 
 interface AuthContextType {
   user: User | null;
