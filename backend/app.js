@@ -26,6 +26,7 @@ const postRoutes = require("./routes/postRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 // Load environment variables
 dotenv.config();
@@ -89,6 +90,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/search", searchRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/users', userRoutes);
 app.use("/auth", authRoutes);
 
 // Default route

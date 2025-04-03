@@ -47,8 +47,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    let interval: NodeJS.Timeout;
-
     const fetchUser = async () => {
       try {
         const user = await getMe();
@@ -65,7 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     fetchUser(); // Initial fetch
 
     // Refresh user every 5 minutes
-    interval = setInterval(fetchUser, 5 * 60 * 1000);
+    const interval = setInterval(fetchUser, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);
