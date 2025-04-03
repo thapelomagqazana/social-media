@@ -1,8 +1,3 @@
-/**
- * Navbar Component
- * Responsive navigation bar with dynamic links based on auth state
- */
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,12 +5,10 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import { useAuth } from "../context/AuthContext";
 import {
-  Dialog,
-  DialogTitle,
-  DialogActions,
-  Button,
   Snackbar,
   Alert,
+  Backdrop,
+  Button,
 } from "@mui/material";
 
 const Navbar = () => {
@@ -23,15 +16,15 @@ const Navbar = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-
   const { user, logout } = useAuth();
-  const username = user?.profile?.username || user?.name?.split(" ")[0];
   const navigate = useNavigate();
+
+  const username = user?.profile?.username || user?.name?.split(" ")[0];
 
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      logout(); // Clears cookie-based token from context
+      logout();
       setSnackbarOpen(true);
       navigate("/signin");
     } finally {
@@ -40,7 +33,6 @@ const Navbar = () => {
     }
   };
 
-  // Auth-based nav links
   const navLinks = user
     ? [
         { label: "Home", path: "/home" },
@@ -62,12 +54,11 @@ const Navbar = () => {
           </Link>
 
           {user && (
-            <span className="hidden sm:inline text-sm sm:text-base text-purple-200 italic">
+            <span className="hidden sm:inline text-sm text-purple-200 italic">
               👋 Hi, {username}
             </span>
           )}
 
-          {/* Desktop */}
           <div className="hidden md:flex space-x-6 text-sm sm:text-base">
             {navLinks.map((link) =>
               link.action ? (
@@ -90,7 +81,6 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
           <div className="md:hidden">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
@@ -102,7 +92,6 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Nav */}
         <AnimatePresence>
           {menuOpen && (
             <motion.div
@@ -117,7 +106,6 @@ const Navbar = () => {
                   👋 Hi, {username}
                 </div>
               )}
-
               {navLinks.map((link) =>
                 link.action ? (
                   <button
@@ -126,7 +114,7 @@ const Navbar = () => {
                       setMenuOpen(false);
                       link.action();
                     }}
-                    className="block text-left w-full text-white py-1 hover:text-purple-300 transition"
+                    className="block w-full text-left text-white py-1 hover:text-purple-300 transition"
                   >
                     {link.label}
                   </button>
@@ -146,36 +134,52 @@ const Navbar = () => {
         </AnimatePresence>
       </nav>
 
-      {/* ✅ Confirmation Modal */}
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Are you sure you want to log out?</DialogTitle>
-        <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)} disabled={loggingOut}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleLogout}
-            disabled={loggingOut}
-            sx={{ backgroundColor: "#4f46e5" }}
-          >
-            {loggingOut ? "Logging out..." : "Yes, Log Out"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* ✅ Logout Modal w/ Animation */}
+      <AnimatePresence>
+        {confirmOpen && (
+          <>
+            <Backdrop open className="z-50 bg-black/30" />
 
-      {/* ✅ Success Snackbar */}
+            <motion.div
+              className="fixed top-1/2 left-1/2 z-50 bg-white rounded-xl shadow-xl p-6 w-80 text-center"
+              initial={{ opacity: 0, scale: 0.8, y: "-50%", x: "-50%" }}
+              animate={{ opacity: 1, scale: 1, y: "-50%", x: "-50%" }}
+              exit={{ opacity: 0, scale: 0.8, y: "-50%", x: "-50%" }}
+              transition={{ duration: 0.3, type: "spring", bounce: 0.25 }}
+            >
+              <h3 className="text-lg font-semibold mb-4">
+                Are you sure you want to log out?
+              </h3>
+              <div className="flex justify-end gap-3 mt-4">
+                <Button
+                  variant="outlined"
+                  onClick={() => setConfirmOpen(false)}
+                  disabled={loggingOut}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  sx={{ backgroundColor: "#4f46e5" }}
+                >
+                  {loggingOut ? "Logging out..." : "Yes, Log Out"}
+                </Button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ✅ Toast after logout */}
       <Snackbar
         open={snackbarOpen}
-        autoHideDuration={3000}
+        autoHideDuration={4000}
         onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
+        <Alert severity="success" onClose={() => setSnackbarOpen(false)} sx={{ width: "100%" }}>
           You have been logged out successfully!
         </Alert>
       </Snackbar>

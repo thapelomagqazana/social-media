@@ -1,7 +1,5 @@
 /**
- * AuthContext (Cookie-Based Auth)
- * Manages global auth state via user object from secure cookies
- * Loads user on app start using GET /auth/me
+ * AuthContext (Advanced: Token Expiry Detection + Polling)
  */
 
 import {
@@ -26,7 +24,6 @@ interface User {
   };
 }
 
-
 interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
@@ -40,30 +37,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Auto-fetch user on load using cookie
+  // Fetch user initially and on interval
   useEffect(() => {
+    const rememberMe =
+      localStorage.getItem("rememberMe") || sessionStorage.getItem("rememberMe");
+
+    if (!rememberMe) {
+      setIsLoading(false);
+      return;
+    }
+
+    let interval: NodeJS.Timeout;
+
     const fetchUser = async () => {
       try {
-        const user = await getMe(); // secure endpoint
-        setUser(user); // Set user from backend
+        const user = await getMe();
+        setUser(user);
       } catch {
-        setUser(null); // Not logged in or session expired
+        setUser(null);
+        localStorage.removeItem("rememberMe");
+        sessionStorage.removeItem("rememberMe");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUser();
+    fetchUser(); // Initial fetch
+
+    // Refresh user every 5 minutes
+    interval = setInterval(fetchUser, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  // Logout handler — clear user + cookie
+  // Logout clears session + flags
   const logout = async () => {
     try {
-      await signOut(); // Backend clears HTTP-only cookie
+      await signOut();
     } catch (err) {
       console.error("Logout error", err);
     }
     setUser(null);
+    localStorage.removeItem("rememberMe");
+    sessionStorage.removeItem("rememberMe");
   };
 
   return (
@@ -73,7 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook to access auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context)
