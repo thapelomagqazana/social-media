@@ -112,28 +112,63 @@ exports.getLikedPostsByUser = async (req, res) => {
  * @access  Private
  */
 exports.getMediaPostsByUser = async (req, res) => {
-  const { userId } = req.params;
-  const page = parseInt(req.query.page || "1");
-  const limit = parseInt(req.query.limit || "10");
+    const { userId } = req.params;
+  
+    // Validate userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+  
+    // Parse and sanitize pagination
+    let page = parseInt(req.query.page);
+    let limit = parseInt(req.query.limit);
+  
+    // Fallback if query injection or invalid values
+    if (isNaN(page) || page < 1) page = 1;
+    if (isNaN(limit) || limit < 0) limit = 10;
 
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
-
-  try {
-    const posts = await Post.find({ user: userId, image: { $ne: "" } })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate("user", "name profile.username profile.profilePicture");
-
-    const total = await Post.countDocuments({ user: userId, image: { $ne: "" } });
-
-    res.json({ posts, total, page, totalPages: Math.ceil(total / limit) });
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch media posts", error: err.message });
-  }
+    if (limit === 0) {
+        return res.status(200).json({
+          posts: [],
+          total: 0,
+          page,
+          totalPages: 0,
+        });
+    }
+  
+    try {
+      // Check if user exists
+      const userExists = await User.exists({ _id: userId });
+      if (!userExists) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      const filter = {
+        user: userId,
+        image: { $type: "string", $nin: ["", null, " "] }, // Only valid image strings
+      };
+  
+      const total = await Post.countDocuments(filter);
+  
+      const posts = await Post.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate("user", "name profile.username profile.profilePicture");
+  
+      return res.status(200).json({
+        posts,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      });
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: "Failed to fetch media posts", error: err.message });
+    }
 };
+  
 
 /**
  * @desc    Get all followers of a specific user
