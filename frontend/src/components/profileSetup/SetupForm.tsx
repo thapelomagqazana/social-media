@@ -2,12 +2,11 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { AxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
-import SetupHeader from "./SetupHeader";
 import AvatarUploader from "./AvatarUploader";
 import BioField from "./BioField";
 import InterestsSelector from "./InterestsSelector";
 import UsernameField from "./UsernameField";
-import { Button, CircularProgress, Snackbar, Alert } from "@mui/material";
+import { Button, CircularProgress, Snackbar, Alert, LinearProgress } from "@mui/material";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { updateProfile } from "../../services/profileService";
@@ -21,7 +20,7 @@ const validationSchema = Yup.object().shape({
     .max(20, "Username too long")
     .required("Username is required"),
   avatar: Yup.mixed().required("Avatar is required"),
-  bio: Yup.string().required("Bio is required"),
+  bio: Yup.string().max(160, "Bio must be 160 characters or less").required("Bio is required"),
   interests: Yup.array().min(1, "Select at least 1 interest"),
 });
 
@@ -34,19 +33,20 @@ const initialValues = {
 
 const SetupForm = () => {
   const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: "success" | "error" | "info" | "warning";
-    }>({
-        open: false,
-        message: "",
-        severity: "success",
-    });
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "info" | "warning";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const { userId } = useParams();
   const navigate = useNavigate();
-
   const { setUser } = useAuth();
+
   const handleClose = () => setSnackbar({ ...snackbar, open: false });
 
   const handleSubmit = async (values: typeof initialValues) => {
@@ -59,17 +59,21 @@ const SetupForm = () => {
       formData.append("file", values.avatar!);
 
       await updateProfile(userId!, formData);
-      const user = await getMe(); // secure endpoint
-      setUser(user); // Set user from backend
-      setSnackbar({ message: `Welcome to ${import.meta.env.VITE_APP_NAME}!`, severity: "success", open: true });
+      const user = await getMe();
+      setUser(user);
+      setSnackbar({
+        message: `Welcome to ${import.meta.env.VITE_APP_NAME}!`,
+        severity: "success",
+        open: true,
+      });
 
       setTimeout(() => {
         navigate("/home");
       }, 2000);
     } catch (error: unknown) {
-        const err = error as AxiosError<{ message: string }>;
-        const msg = err?.response?.data?.message || "Failed to save profile";
-        setSnackbar({ open: true, message: msg, severity: "error" });
+      const err = error as AxiosError<{ message: string }>;
+      const msg = err?.response?.data?.message || "Failed to save profile";
+      setSnackbar({ open: true, message: msg, severity: "error" });
     } finally {
       setLoading(false);
     }
@@ -77,14 +81,21 @@ const SetupForm = () => {
 
   return (
     <>
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold text-white">Welcome! Let's set up your profile</h2>
+        {loading && <LinearProgress color="secondary" className="mt-2" />}
+      </div>
+
       <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
         {({ values, setFieldValue, errors, touched }) => (
-          <Form className="space-y-6">
-            <SetupHeader />
-
+          <Form className="space-y-6 mt-6">
             <AvatarUploader
               value={values.avatar}
-              onChange={(file) => setFieldValue("avatar", file)}
+              onChange={(file) => {
+                setUploading(true);
+                setFieldValue("avatar", file);
+                setTimeout(() => setUploading(false), 800); // Fake delay
+              }}
               error={touched.avatar && !!errors.avatar}
             />
 
@@ -100,6 +111,10 @@ const SetupForm = () => {
               error={touched.bio && errors.bio}
             />
 
+            <div className="text-right text-sm text-gray-400">
+              {values.bio.length} / 160 characters
+            </div>
+
             <InterestsSelector
               selected={values.interests}
               onChange={(arr) => setFieldValue("interests", arr)}
@@ -114,7 +129,7 @@ const SetupForm = () => {
               <Button
                 type="submit"
                 fullWidth
-                disabled={loading}
+                disabled={loading || uploading}
                 variant="contained"
                 sx={{ backgroundColor: "#4f46e5", py: 1.5, borderRadius: "12px" }}
               >

@@ -59,28 +59,6 @@ const Navbar = () => {
             </span>
           )}
 
-          <div className="hidden md:flex space-x-6 text-sm sm:text-base">
-            {navLinks.map((link) =>
-              link.action ? (
-                <button
-                  key={link.label}
-                  onClick={link.action}
-                  className="hover:text-purple-300 transition"
-                >
-                  {link.label}
-                </button>
-              ) : (
-                <Link
-                  key={link.path}
-                  to={link.path!}
-                  className="hover:text-purple-300 transition"
-                >
-                  {link.label}
-                </Link>
-              )
-            )}
-          </div>
-
           <div className="md:hidden">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
@@ -134,7 +112,7 @@ const Navbar = () => {
         </AnimatePresence>
       </nav>
 
-      {/* ✅ Logout Modal w/ Animation */}
+      {/* Logout Modal w/ Animation */}
       <AnimatePresence>
         {confirmOpen && (
           <>
@@ -172,7 +150,7 @@ const Navbar = () => {
         )}
       </AnimatePresence>
 
-      {/* ✅ Toast after logout */}
+      {/* Toast after logout */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}
