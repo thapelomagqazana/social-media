@@ -12,7 +12,7 @@ import * as Yup from "yup";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
-import { signIn } from "../../services/authService";
+import { signIn, getMe } from "../../services/authService";
 import { AxiosError } from "axios";
 import { useAuth } from "../../context/AuthContext";
 
@@ -43,7 +43,7 @@ const SignInForm = () => {
     setLoading(true);
     try {
       // Send login request (sets secure cookie via backend)
-      const { user } = await signIn(values);
+      await signIn(values);
 
       // Set flag in localStorage or sessionStorage
       if (values.remember) {
@@ -52,8 +52,9 @@ const SignInForm = () => {
         sessionStorage.setItem("rememberMe", "true");
       }
 
+      const freshUser = await getMe();
       // Save user in context
-      setUser(user);
+      setUser(freshUser);
 
       // Show success snackbar
       setSnackbar({

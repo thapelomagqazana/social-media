@@ -3,13 +3,14 @@ import PostCard from "./PostCard";
 import FeedSkeleton from "./FeedSkeleton";
 import NoPosts from "./NoPosts";
 import { getFeed } from "../../services/postService";
+import { Post } from "../../types";
 
 const NewsFeed = () => {
-  const [posts, setPosts] = useState<any[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true); // Stop fetching when false
-  const loader = useRef(null);
+  const [hasMore, setHasMore] = useState(true);
+  const loader = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     loadPosts(page);
@@ -20,21 +21,20 @@ const NewsFeed = () => {
 
     setLoading(true);
     try {
-      const res = await getFeed(page);
+      const res: Post[] = await getFeed(page);
       if (res.length === 0) {
-        setHasMore(false); // No more posts
+        setHasMore(false);
       } else {
         setPosts((prev) => [...prev, ...res]);
       }
     } catch (err) {
       console.error("Failed to load feed:", err);
-      setHasMore(false); // Stop retrying endlessly
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // Setup Intersection Observer only when there's more to load
   useEffect(() => {
     if (!hasMore || loading) return;
 
@@ -60,16 +60,12 @@ const NewsFeed = () => {
       {posts.map((post) => (
         <PostCard key={post._id} post={post} />
       ))}
-
       {loading && <FeedSkeleton />}
-
       {!hasMore && posts.length > 0 && (
         <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-4">
           You're all caught up!
         </div>
       )}
-
-      {/* Intersection target for infinite scroll */}
       <div ref={loader} />
     </div>
   );

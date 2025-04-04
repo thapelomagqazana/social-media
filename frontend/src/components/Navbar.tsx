@@ -17,6 +17,7 @@ const Navbar = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const { user, logout } = useAuth();
+  console.log(user?._id);
   const navigate = useNavigate();
 
   const username = user?.profile?.username || user?.name?.split(" ")[0];
@@ -24,7 +25,7 @@ const Navbar = () => {
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      logout();
+      await logout();
       setSnackbarOpen(true);
       navigate("/signin");
     } finally {
@@ -49,27 +50,69 @@ const Navbar = () => {
     <>
       <nav className="w-full fixed top-0 left-0 bg-gradient-to-r from-indigo-900 via-purple-900 to-gray-900 text-white z-50 shadow-lg">
         <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 py-4">
+          {/* App Name */}
           <Link to="/" className="text-xl sm:text-2xl font-bold tracking-tight">
             {import.meta.env.VITE_APP_NAME || "MERN Social"}
           </Link>
 
-          {user && (
-            <span className="hidden sm:inline text-sm text-purple-200 italic">
-              👋 Hi, {username}
-            </span>
-          )}
+          {/* Right Section */}
+          <div className="flex items-center gap-4">
+            {user && (
+              <>
+                {/* Desktop Inline Links */}
+                <div className="hidden md:flex items-center gap-6">
+                  {navLinks
+                    .filter((link) => link.label !== "Profile")
+                    .map((link) =>
+                      link.action ? (
+                        <button
+                          key={link.label}
+                          onClick={link.action}
+                          className="text-sm hover:text-purple-300 transition"
+                        >
+                          {link.label}
+                        </button>
+                      ) : (
+                        <Link
+                          key={link.path}
+                          to={link.path!}
+                          className="text-sm hover:text-purple-300 transition"
+                        >
+                          {link.label}
+                        </Link>
+                      )
+                    )}
+                </div>
 
-          <div className="md:hidden">
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="focus:outline-none"
-              aria-label="Toggle menu"
-            >
-              {menuOpen ? <CloseIcon /> : <MenuIcon />}
-            </button>
+                {/* Avatar */}
+                <Link
+                  to={`/profile/${user?._id}`}
+                  className="hidden sm:block w-9 h-9 rounded-full border-2 border-indigo-400 overflow-hidden hover:ring-2 hover:ring-indigo-500 transition"
+                  title="View Profile"
+                >
+                  <img
+                    src={user?.profile?.profilePicture || "/default-avatar.png"}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                </Link>
+              </>
+            )}
+
+            {/* Mobile Toggle */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="focus:outline-none"
+                aria-label="Toggle menu"
+              >
+                {menuOpen ? <CloseIcon /> : <MenuIcon />}
+              </button>
+            </div>
           </div>
         </div>
 
+        {/* Mobile Menu */}
         <AnimatePresence>
           {menuOpen && (
             <motion.div
@@ -112,12 +155,11 @@ const Navbar = () => {
         </AnimatePresence>
       </nav>
 
-      {/* Logout Modal w/ Animation */}
+      {/* Logout Confirmation Modal */}
       <AnimatePresence>
         {confirmOpen && (
           <>
             <Backdrop open className="z-50 bg-black/30" />
-
             <motion.div
               className="fixed top-1/2 left-1/2 z-50 bg-white rounded-xl shadow-xl p-6 w-80 text-center"
               initial={{ opacity: 0, scale: 0.8, y: "-50%", x: "-50%" }}

@@ -13,6 +13,7 @@ const navItems = [
 
 const LeftSidebar = () => {
   const { user } = useAuth();
+  console.log(user);
   const [expanded, setExpanded] = useState(true);
 
   return (

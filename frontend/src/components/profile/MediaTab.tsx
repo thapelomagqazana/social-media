@@ -2,18 +2,37 @@ import { useEffect, useState } from "react";
 import { getUserMediaPosts } from "../../services/userService";
 import PostCard from "../feed/PostCard";
 import FeedSkeleton from "../feed/FeedSkeleton";
+import { Post } from "../../types";
 
-const MediaTab = ({ userId }: { userId: string }) => {
-  const [mediaPosts, setMediaPosts] = useState<any[]>([]);
+/**
+ * Props for the MediaTab component
+ */
+interface MediaTabProps {
+  userId: string;
+}
+
+/**
+ * MediaTab component
+ *
+ * @description
+ * Displays all posts by a user that contain media (images or videos).
+ *
+ * @param {string} userId - ID of the user whose media posts are being fetched.
+ *
+ * @returns JSX.Element
+ */
+const MediaTab = ({ userId }: MediaTabProps) => {
+  const [mediaPosts, setMediaPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
+    const fetchMediaPosts = async () => {
       const data = await getUserMediaPosts(userId);
-      const posts = data.posts;
-      setMediaPosts(posts);
+      setMediaPosts(data.posts);
       setLoading(false);
-    })();
+    };
+
+    fetchMediaPosts();
   }, [userId]);
 
   if (loading) return <FeedSkeleton />;

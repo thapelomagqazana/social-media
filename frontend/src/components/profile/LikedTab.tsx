@@ -2,18 +2,37 @@ import { useEffect, useState } from "react";
 import { getUserLikedPosts } from "../../services/userService";
 import PostCard from "../feed/PostCard";
 import FeedSkeleton from "../feed/FeedSkeleton";
+import { Post } from "../../types";
 
-const LikedTab = ({ userId }: { userId: string }) => {
-  const [likedPosts, setLikedPosts] = useState<any[]>([]);
+/**
+ * Props for the LikedTab component
+ */
+interface LikedTabProps {
+  userId: string;
+}
+
+/**
+ * LikedTab component
+ *
+ * @description
+ * Displays the list of posts liked by the user.
+ *
+ * @param {string} userId - ID of the user whose liked posts are fetched.
+ *
+ * @returns JSX.Element
+ */
+const LikedTab = ({ userId }: LikedTabProps) => {
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
+    const fetchLikedPosts = async () => {
       const data = await getUserLikedPosts(userId);
-      const posts = data.posts;
-      setLikedPosts(posts);
+      setLikedPosts(data.posts);
       setLoading(false);
-    })();
+    };
+
+    fetchLikedPosts();
   }, [userId]);
 
   if (loading) return <FeedSkeleton />;

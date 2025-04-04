@@ -12,14 +12,15 @@ import {
 } from "../services/userService";
 import { getUserProfile } from "../services/profileService";
 import { useAuth } from "../context/AuthContext";
+import { UserProfile, UserStatsObj } from "../types";
 
 const tabs = ["Posts", "Liked", "Media"];
 
 const UserProfilePage = () => {
   const { userId } = useParams();
   const [activeTab, setActiveTab] = useState("Posts");
-  const [profile, setProfile] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [stats, setStats] = useState<UserStatsObj | null>(null);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
   const { user: authUser } = useAuth();
