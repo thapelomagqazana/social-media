@@ -10,15 +10,16 @@ import Splash from "./pages/Splash";
 import SignUp from "./pages/SignUp";
 import SignInPage from './pages/SignInPage';
 import ProfileSetup from "./pages/ProfileSetup";
+import UserProfilePage from "./pages/UserProfilePage";
 import Home from "./pages/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const AppRoutes = () => {
   return (
     <BrowserRouter>
-      <div>
+      <div className="flex flex-col min-h-screen">
         <Navbar />
-            <main>
+          <main className="flex-grow">
                 <Routes> 
                     <Route path="/" element={<Splash />} />
                     <Route path="/signup" element={<SignUp />} />
@@ -26,6 +27,7 @@ const AppRoutes = () => {
                     {/* Protected Routes */}
                     <Route element={<ProtectedRoute />}>
                         <Route path="/setup/:userId" element={<ProfileSetup />} />
+                        <Route path="/profile/:userId" element={<UserProfilePage />} />
                         <Route path="/home" element={<Home />} />
                     </Route>
                 </Routes>

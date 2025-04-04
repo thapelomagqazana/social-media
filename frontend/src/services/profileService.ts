@@ -6,6 +6,16 @@
 import api from "./api";
 
 /**
+ * Fetch user profile details by user ID
+ * @param userId - ID of the user
+ */
+export const getUserProfile = async (userId: string) => {
+  const res = await api.get(`/api/profile/${userId}`);
+  return res.data.profile;
+};
+
+
+/**
  * Update user profile by userId
  * @param userId string
  * @param formData FormData (with avatar, bio, interests, username)
