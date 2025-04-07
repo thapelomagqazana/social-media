@@ -5,6 +5,7 @@ import UserStats from "../components/profile/UserStats";
 import PostsTab from "../components/profile/PostsTab";
 import LikedTab from "../components/profile/LikedTab";
 import MediaTab from "../components/profile/MediaTab";
+import FollowButton from "../components/profile/FollowButton";
 import FollowersModal from "../components/profile/FollowersModal";
 import FollowingModal from "../components/profile/FollowingModal";
 import {
@@ -42,6 +43,10 @@ const UserProfilePage = () => {
           profile={profile}
           isOwner={profile?.user?._id === authUser?._id}
         />
+      )}
+      {/* Follow/Unfollow Button */}
+      {authUser && authUser._id !== userId && (
+        <FollowButton targetUserId={userId!} />
       )}
       {stats && (
         <UserStats

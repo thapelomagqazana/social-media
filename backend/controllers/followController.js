@@ -103,8 +103,42 @@ const whoToFollow = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Checks if current user follows target user
+ * @route   GET /api/follow/:userId
+ * @access  Private
+ */
+const isFollowingUser = async (req, res) => {
+  const { userId } = req.params;
+  const currentUserId = req.user._id;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: "Invalid target user ID" });
+  }
+
+  const userExists = await User.exists({ _id: userId });
+  if (!userExists) {
+    return res.status(404).json({ message: "Target user not found" });
+  }
+
+  try {
+    const following = await Follow.exists({
+      follower: currentUserId,
+      following: userId,
+    });
+
+    res.status(200).json({ following: !!following }); // returns { following: true/false }
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to check follow status",
+      error: err.message,
+    });
+  }
+};
+
 module.exports = {
   followUser,
   unfollowUser,
   whoToFollow,
+  isFollowingUser,
 };

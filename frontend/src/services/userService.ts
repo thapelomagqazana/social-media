@@ -66,3 +66,19 @@ export const getUserStats = async (userId: string) => {
   const res = await api.get(`/api/users/${userId}/stats`);
   return res.data;
 };
+
+export const isFollowingUser = async (targetUserId: string) => {
+    const res = await api.get(`/api/follow/${targetUserId}`);
+    return res.data;
+};
+
+export const followUser = async (targetUserId: string) => {
+    const res = await api.post(`/api/follow/${targetUserId}`);
+    return res.data;
+};
+
+export const unfollowUser = async (targetUserId: string) => {
+    const res = await api.delete(`/api/unfollow/${targetUserId}`);
+    return res.data;
+};
+  

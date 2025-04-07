@@ -9,8 +9,10 @@ const {
   followUser,
   unfollowUser,
   whoToFollow,
+  isFollowingUser,
 } = require("../controllers/followController.js");
 const { protect, checkBanned } = require("../middleware/authMiddleware.js");
+const { rateLimiter } = require("../middleware/rateLimiter.js");
 
 const router = express.Router();
 
@@ -92,5 +94,40 @@ router.delete("/:userId", protect, checkBanned, unfollowUser);
  *         description: Server error
  */
 router.get("/suggestions", protect, checkBanned, whoToFollow);
+
+/**
+ * @swagger
+ * /api/follow/{userId}:
+ *   get:
+ *     summary: Check if the current user is following another user
+ *     tags: [Follow]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the user to check follow status
+ *     responses:
+ *       200:
+ *         description: Follow status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 following:
+ *                   type: boolean
+ *                   example: true
+ *       400:
+ *         description: Invalid user ID
+ *       403:
+ *         description: Banned user
+ *       500:
+ *         description: Server error
+ */
+router.get("/:userId", protect, checkBanned, rateLimiter, isFollowingUser);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const Post = require("../models/Post");
 const Follow = require("../models/Follow");
 const Comment = require("../models/Comment");
+const Like = require("../models/Like");
 const mongoose = require("mongoose");
 const escape = require("escape-html");
 const { createNotification } = require("../utils/notify");
@@ -55,17 +56,18 @@ const deletePost = async (req, res) => {
       return res.status(403).json({ message: "Forbidden: Not your post" });
     }
 
+    await Like.deleteMany({ post: post._id });
     await Comment.deleteMany({ post: post._id });
     await post.deleteOne();
 
-    res.status(200).json({ message: "Post and related comments deleted" });
+    res.status(200).json({ message: "Post and related comments and likes deleted" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
 /**
- * @desc    Toggle like/unlike a post
+ * @desc    Toggle like/unlike a post using Like model
  * @route   PUT /api/posts/:postId/like
  * @access  Private
  */
@@ -80,12 +82,13 @@ const toggleLikePost = async (req, res) => {
     const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ message: "Post not found" });
 
-    const liked = post.likes.includes(req.user._id);
+    const existingLike = await Like.findOne({ user: req.user._id, post: post._id });
 
-    if (liked) {
-      post.likes.pull(req.user._id);
+    if (existingLike) {
+      await existingLike.deleteOne();
+      return res.status(200).json({ message: "Unliked post" });
     } else {
-      post.likes.push(req.user._id);
+      await Like.create({ user: req.user._id, post: post._id });
 
       if (post.user.toString() !== req.user._id.toString()) {
         await createNotification({
@@ -95,12 +98,11 @@ const toggleLikePost = async (req, res) => {
           post: post._id,
         });
       }
-    }
 
-    await post.save();
-    res.status(200).json({ message: liked ? "Unliked post" : "Liked post", post });
+      return res.status(200).json({ message: "Liked post" });
+    }
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 

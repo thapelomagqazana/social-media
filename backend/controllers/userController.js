@@ -5,6 +5,7 @@
  */
 
 const mongoose = require("mongoose");
+const Like = require("../models/Like");
 const Post = require("../models/Post");
 const User = require("../models/User");
 const Profile = require("../models/Profile");
@@ -107,12 +108,15 @@ exports.getLikedPostsByUser = async (req, res) => {
     }
   
     try {
-      const total = await Post.countDocuments({ likes: userId });
+      const total = await Like.countDocuments({ user: userId });
   
-      const posts = await Post.find({ likes: userId })
+      const likeDocs = await Like.find({ user: userId })
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
-        .limit(limit);
+        .limit(limit)
+        .populate("post");
+  
+      const posts = likeDocs.map((doc) => doc.post);
   
       const enrichedPosts = await Promise.all(
         posts.map(async (post) => {
@@ -124,6 +128,7 @@ exports.getLikedPostsByUser = async (req, res) => {
             user: {
               _id: postUser._id,
               name: postUser.name,
+              email: postUser.email,
               username: profile?.username || null,
               profilePicture: profile?.profilePicture || null,
             },

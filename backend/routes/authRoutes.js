@@ -5,7 +5,7 @@
  */
 
 const express = require("express");
-const { signinRateLimiter } = require("../middleware/rateLimiter.js");
+const { rateLimiter } = require("../middleware/rateLimiter.js");
 const { protect } = require("../middleware/authMiddleware.js");
 const {
   signup,
@@ -87,7 +87,7 @@ router.post("/signup", signup);
  *       401:
  *         description: Invalid credentials
  */
-router.post("/signin", signinRateLimiter, signin);
+router.post("/signin", rateLimiter, signin);
 
 /**
  * @swagger

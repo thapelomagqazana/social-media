@@ -57,10 +57,8 @@ const Navbar = () => {
 
           {/* Right Section */}
           <div className="flex items-center gap-4">
-            {user && (
-              <>
-                {/* Desktop Inline Links */}
-                <div className="hidden md:flex items-center gap-6">
+            {/* Desktop Inline Links */}
+            <div className="hidden md:flex items-center gap-6">
                   {navLinks
                     .filter((link) => link.label !== "Profile")
                     .map((link) =>
@@ -82,8 +80,9 @@ const Navbar = () => {
                         </Link>
                       )
                     )}
-                </div>
-
+            </div>
+            {user && (
+              <>
                 {/* Avatar */}
                 <Link
                   to={`/profile/${user?._id}`}

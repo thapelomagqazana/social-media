@@ -27,11 +27,6 @@ const mongoose = require('mongoose');
  *         image:
  *           type: string
  *           description: Optional image URL or path
- *         likes:
- *           type: array
- *           items:
- *             type: string
- *           description: Array of user IDs who liked the post
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -57,12 +52,6 @@ const postSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    likes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
   },
   { timestamps: true }
 );
