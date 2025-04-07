@@ -17,7 +17,6 @@ const Navbar = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const { user, logout } = useAuth();
-  console.log(user?._id);
   const navigate = useNavigate();
 
   const username = user?.profile?.username || user?.name?.split(" ")[0];

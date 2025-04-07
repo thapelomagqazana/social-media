@@ -40,6 +40,16 @@ export interface UserStatsObj {
     followersCount: number;
     followingCount: number;
 }
+
+/**
+ * Interface representing the expected profile update fields
+ */
+export interface UpdateProfilePayload {
+  username?: string;
+  bio?: string;
+  interests?: string[];
+  profilePicture?: File | null;
+}
   
   
   

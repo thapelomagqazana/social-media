@@ -5,12 +5,9 @@ import UserStats from "../components/profile/UserStats";
 import PostsTab from "../components/profile/PostsTab";
 import LikedTab from "../components/profile/LikedTab";
 import MediaTab from "../components/profile/MediaTab";
-import FollowButton from "../components/profile/FollowButton";
 import FollowersModal from "../components/profile/FollowersModal";
 import FollowingModal from "../components/profile/FollowingModal";
-import {
-  getUserStats
-} from "../services/userService";
+import { getUserStats } from "../services/userService";
 import { getUserProfile } from "../services/profileService";
 import { useAuth } from "../context/AuthContext";
 import { UserProfile, UserStatsObj } from "../types";
@@ -28,26 +25,28 @@ const UserProfilePage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const profile = await getUserProfile(userId!);
-      const stats = await getUserStats(userId!);
-      setProfile(profile);
-      setStats(stats);
+      const profileData = await getUserProfile(userId!);
+      const statsData = await getUserStats(userId!);
+      setProfile(profileData);
+      setStats(statsData);
     };
     fetchData();
   }, [userId]);
+
+  const handleProfileUpdate = (updatedProfile: UserProfile) => {
+    setProfile(updatedProfile);
+  };
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 mt-20 min-h-[calc(100vh-100px)]">
       {profile && (
         <ProfileHeader
           profile={profile}
-          isOwner={profile?.user?._id === authUser?._id}
+          isOwner={profile.user._id === authUser?._id}
+          onProfileUpdate={handleProfileUpdate}
         />
       )}
-      {/* Follow/Unfollow Button */}
-      {authUser && authUser._id !== userId && (
-        <FollowButton targetUserId={userId!} />
-      )}
+
       {stats && (
         <UserStats
           stats={stats}
@@ -63,7 +62,9 @@ const UserProfilePage = () => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`py-2 px-3 text-sm font-medium transition-all duration-300 ${
-              activeTab === tab ? "border-b-2 border-indigo-500 text-indigo-600" : "text-gray-500 hover:text-indigo-500"
+              activeTab === tab
+                ? "border-b-2 border-indigo-500 text-indigo-600"
+                : "text-gray-500 hover:text-indigo-500"
             }`}
           >
             {tab}
@@ -79,8 +80,16 @@ const UserProfilePage = () => {
       </div>
 
       {/* Modals */}
-      <FollowersModal open={showFollowers} onClose={() => setShowFollowers(false)} userId={userId!} />
-      <FollowingModal open={showFollowing} onClose={() => setShowFollowing(false)} userId={userId!} />
+      <FollowersModal
+        open={showFollowers}
+        onClose={() => setShowFollowers(false)}
+        userId={userId!}
+      />
+      <FollowingModal
+        open={showFollowing}
+        onClose={() => setShowFollowing(false)}
+        userId={userId!}
+      />
     </div>
   );
 };
