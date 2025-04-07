@@ -11,6 +11,7 @@ import SignUp from "./pages/SignUp";
 import SignInPage from './pages/SignInPage';
 import ProfileSetup from "./pages/ProfileSetup";
 import UserProfilePage from "./pages/UserProfilePage";
+import SettingsPage from "./pages/SettingsPage";
 import Home from "./pages/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -28,6 +29,7 @@ const AppRoutes = () => {
                     <Route element={<ProtectedRoute />}>
                         <Route path="/setup/:userId" element={<ProfileSetup />} />
                         <Route path="/profile/:userId" element={<UserProfilePage />} />
+                        <Route path="/settings" element={<SettingsPage />} />
                         <Route path="/home" element={<Home />} />
                     </Route>
                 </Routes>

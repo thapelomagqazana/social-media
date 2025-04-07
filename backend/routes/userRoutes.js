@@ -12,8 +12,9 @@ const {
   getUserFollowers,
   getUserFollowing,
   getUserStats,
+  deleteCurrentUser,
 } = require("../controllers/userController");
-const { protect } = require("../middleware/authMiddleware.js");
+const { protect, checkBanned } = require("../middleware/authMiddleware.js");
 
 /**
  * @swagger
@@ -203,6 +204,28 @@ router.get("/:userId/following", protect, getUserFollowing);
  *         description: User not found
  */
 router.get("/:userId/stats", protect, getUserStats);
+
+/**
+ * @swagger
+ * /api/users/me:
+ *   delete:
+ *     summary: Delete the authenticated user's account
+ *     tags: [User]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *       400:
+ *         description: Invalid user ID
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.delete("/me", protect, checkBanned, deleteCurrentUser);
 
 module.exports = router;
 

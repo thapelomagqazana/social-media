@@ -38,6 +38,7 @@ const Navbar = () => {
         { label: "Home", path: "/home" },
         { label: "Explore", path: "/explore" },
         { label: "Profile", path: `/profile/${user?._id}` },
+        { label: "Settings", path: "/settings" },
         { label: "Logout", action: () => setConfirmOpen(true) },
       ]
     : [

@@ -1,6 +1,5 @@
 import api from "./api";
 
-
 /**
  * Fetch posts created by a user
  * @param userId - ID of the user
@@ -80,5 +79,10 @@ export const followUser = async (targetUserId: string) => {
 export const unfollowUser = async (targetUserId: string) => {
     const res = await api.delete(`/api/unfollow/${targetUserId}`);
     return res.data;
+};
+
+export const deleteAccount = async () => {
+  const res = await api.delete("/api/users/me");
+  return res.data;
 };
   

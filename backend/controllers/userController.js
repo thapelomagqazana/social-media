@@ -8,8 +8,10 @@ const mongoose = require("mongoose");
 const Like = require("../models/Like");
 const Post = require("../models/Post");
 const User = require("../models/User");
+const Comment = require("../models/Comment");
 const Profile = require("../models/Profile");
 const Follow = require("../models/Follow");
+const Notification = require("../models/Notification");
 
 /**
  * @desc    Get posts created by a specific user
@@ -378,5 +380,47 @@ exports.getUserStats = async (req, res) => {
     res.json({ postCount, followersCount, followingCount });
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch stats", error: err.message });
+  }
+};
+
+/**
+ * @desc    Delete current authenticated user
+ * @route   DELETE /api/users/me
+ * @access  Private
+ */
+exports.deleteCurrentUser = async (req, res) => {
+  const userId = req.user?._id;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: "Invalid user ID" });
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Get user's posts to remove related likes & notifications
+    const userPostIds = await Post.find({ user: userId }).distinct("_id");
+
+    await Promise.all([
+      Post.deleteMany({ user: userId }),
+      Comment.deleteMany({ user: userId }),
+      Like.deleteMany({ $or: [{ user: userId }, { post: { $in: userPostIds } }] }),
+      Follow.deleteMany({ $or: [{ follower: userId }, { following: userId }] }),
+      Profile.deleteOne({ user: userId }),
+      Notification.deleteMany({
+        $or: [
+          { sender: userId },
+          { recipient: userId },
+          { post: { $in: userPostIds } },
+        ],
+      }),
+    ]);
+
+    await user.deleteOne();
+
+    res.status(200).json({ message: "Your account and associated data have been deleted." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };

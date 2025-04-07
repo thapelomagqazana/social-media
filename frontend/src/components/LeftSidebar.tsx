@@ -9,6 +9,7 @@ const navItems = [
   { label: "Explore", icon: "🔍", path: "/explore" },
   { label: "Messages", icon: "💬", path: "/messages" },
   { label: "Notifications", icon: "🔔", path: "/notifications" },
+  { label: "Settings", icon: "⚙️", path: "/settings" },
 ];
 
 const LeftSidebar = () => {
